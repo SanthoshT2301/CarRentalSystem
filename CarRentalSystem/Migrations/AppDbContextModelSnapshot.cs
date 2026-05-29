@@ -732,6 +732,10 @@ namespace CarRentalSystem.Migrations
 
                     b.HasIndex("RoleId");
 
+                    b.HasIndex("Email", "Phone")
+                        .IsUnique()
+                        .HasFilter("[Phone] IS NOT NULL");
+
                     b.ToTable("Users");
 
                     b.HasData(

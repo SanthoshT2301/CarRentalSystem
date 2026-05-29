@@ -22,7 +22,7 @@ public CarService(AppDbContext appDbContext)
             .Include(c => c.CarImages)
             .Select(c => new CarDto
             {
-                Id = c.CarId.ToString(),
+                Id = c.CarId,
                 Make = c.Brand.BrandName,
                 Model = c.Model,
                 Year = (int)c.CarYear,
@@ -37,25 +37,32 @@ public CarService(AppDbContext appDbContext)
     }
 
     public async Task<ActionResult<CarDto>> GetCarById(int id)
-    {
-    var car=await _appDbContext.Cars.FindAsync(id);
-    if(car!=null)
-    {
-        var carDto=new CarDto
-        {
-            Id = car.CarId.ToString(),
-                Make = car.Brand.BrandName,
-                Model = car.Model,
-                Year = (int)car.CarYear,
-                Type = car.Category.CategoryName,
-                Location = car.Location.LocationName,
-                PricePerDay = (decimal)car.PricePerDay,
-                Available = car.CarStatusId == 1,
-                Image = car.CarImages.FirstOrDefault() != null ? car.CarImages.FirstOrDefault().ImageUrl : ""
-        };
-        return carDto;
-    }
-        return null;
+{
+    var car = await _appDbContext.Cars
+        .Include(c => c.Brand)
+        .Include(c => c.Category)
+        .Include(c => c.Location)
+        .Include(c => c.CarImages)
+        .FirstOrDefaultAsync(c => c.CarId == id);
 
+    if (car == null)
+    {
+        return null;
     }
+
+    var carDto = new CarDto
+    {
+        Id = car.CarId,
+        Make = car.Brand?.BrandName,
+        Model = car.Model,
+        Year = (int)car.CarYear,
+        Type = car.Category?.CategoryName,
+        Location = car.Location?.LocationName,
+        PricePerDay = (decimal)car.PricePerDay,
+        Available = car.CarStatusId == 1,
+        Image = car.CarImages.FirstOrDefault()?.ImageUrl ?? ""
+    };
+
+    return carDto;
+}
 }

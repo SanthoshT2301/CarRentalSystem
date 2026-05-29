@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CarRentalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260529045046_intialCreate")]
-    partial class intialCreate
+    [Migration("20260529121420_IntialDBCreate")]
+    partial class IntialDBCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,7 +105,6 @@ namespace CarRentalSystem.Migrations
                             CarYear = 2023,
                             CategoryId = 1,
                             Color = "Midnight Silver",
-                            CreatedAt = new DateTime(2026, 5, 29, 4, 50, 44, 565, DateTimeKind.Utc).AddTicks(7681),
                             FuelTypeId = 1,
                             LocationId = 1,
                             Mileage = "Brand New",
@@ -122,7 +121,6 @@ namespace CarRentalSystem.Migrations
                             CarYear = 2022,
                             CategoryId = 2,
                             Color = "Super White",
-                            CreatedAt = new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1716),
                             FuelTypeId = 2,
                             LocationId = 2,
                             Mileage = "15,000 mi",
@@ -139,7 +137,6 @@ namespace CarRentalSystem.Migrations
                             CarYear = 2021,
                             CategoryId = 3,
                             Color = "Sarge Green",
-                            CreatedAt = new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1742),
                             FuelTypeId = 2,
                             LocationId = 3,
                             Mileage = "22,000 mi",
@@ -156,7 +153,6 @@ namespace CarRentalSystem.Migrations
                             CarYear = 2022,
                             CategoryId = 4,
                             Color = "Sonic Gray",
-                            CreatedAt = new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1749),
                             FuelTypeId = 3,
                             LocationId = 4,
                             Mileage = "10,000 mi",
@@ -738,6 +734,10 @@ namespace CarRentalSystem.Migrations
                     b.HasKey("UserId");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("Email", "Phone")
+                        .IsUnique()
+                        .HasFilter("[Phone] IS NOT NULL");
 
                     b.ToTable("Users");
 

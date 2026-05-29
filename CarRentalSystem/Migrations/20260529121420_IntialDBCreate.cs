@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CarRentalSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class intialCreate : Migration
+    public partial class IntialDBCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -447,10 +447,10 @@ namespace CarRentalSystem.Migrations
                 columns: new[] { "CarId", "Address", "BrandId", "CarStatusId", "CarYear", "CategoryId", "Color", "CreatedAt", "FuelTypeId", "LocationId", "Mileage", "Model", "NoSeats", "PricePerDay", "Transmission" },
                 values: new object[,]
                 {
-                    { 1, null, 1, 1, 2023, 1, "Midnight Silver", new DateTime(2026, 5, 29, 4, 50, 44, 565, DateTimeKind.Utc).AddTicks(7681), 1, 1, "Brand New", "Model 3", 5, 120.00m, "Automatic" },
-                    { 2, null, 2, 1, 2022, 2, "Super White", new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1716), 2, 2, "15,000 mi", "Camry", 5, 55.00m, "Automatic" },
-                    { 3, null, 3, 1, 2021, 3, "Sarge Green", new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1742), 2, 3, "22,000 mi", "Wrangler", 4, 85.00m, "Automatic" },
-                    { 4, null, 4, 1, 2022, 4, "Sonic Gray", new DateTime(2026, 5, 29, 4, 50, 44, 567, DateTimeKind.Utc).AddTicks(1749), 3, 4, "10,000 mi", "Civic", 5, 45.00m, "Automatic" }
+                    { 1, null, 1, 1, 2023, 1, "Midnight Silver", null, 1, 1, "Brand New", "Model 3", 5, 120.00m, "Automatic" },
+                    { 2, null, 2, 1, 2022, 2, "Super White", null, 2, 2, "15,000 mi", "Camry", 5, 55.00m, "Automatic" },
+                    { 3, null, 3, 1, 2021, 3, "Sarge Green", null, 2, 3, "22,000 mi", "Wrangler", 4, 85.00m, "Automatic" },
+                    { 4, null, 4, 1, 2022, 4, "Sonic Gray", null, 3, 4, "10,000 mi", "Civic", 5, 45.00m, "Automatic" }
                 });
 
             migrationBuilder.InsertData(
@@ -552,6 +552,13 @@ namespace CarRentalSystem.Migrations
                 name: "IX_Reviews_UserId",
                 table: "Reviews",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email_Phone",
+                table: "Users",
+                columns: new[] { "Email", "Phone" },
+                unique: true,
+                filter: "[Phone] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleId",

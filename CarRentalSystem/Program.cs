@@ -1,5 +1,7 @@
 using CarRentalSystem.DATA;
+using CarRentalSystem.Service.Car;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,12 +12,31 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+ builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "demowebapi",
+                    Version = "v1"
+                });
+            });
+
+builder.Services.AddScoped<ICarService, CarService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "demowebapi v1");
+                    options.RoutePrefix = string.Empty;
+                });
+    
 }
 
 app.UseHttpsRedirection();

@@ -29,8 +29,53 @@ namespace CarRentalSystem.DATA
         {
             base.OnModelCreating(modelBuilder);
     
+ // Configure primary keys (naming convention maps automatically, but specifying explicitly creates solid metadata)
+            modelBuilder.Entity<Role>().HasKey(r => r.RoleId);
+            modelBuilder.Entity<Role>().Property(r => r.RoleId).UseIdentityColumn();
 
-        
+            modelBuilder.Entity<User>().HasKey(u => u.UserId);
+            modelBuilder.Entity<User>().Property(u => u.UserId).UseIdentityColumn();
+
+            modelBuilder.Entity<Review>().HasKey(r => r.ReviewId);
+            modelBuilder.Entity<Review>().Property(r => r.ReviewId).UseIdentityColumn();
+
+            modelBuilder.Entity<PaymentMethod>().HasKey(pm => pm.PaymentMethodId);
+            modelBuilder.Entity<PaymentMethod>().Property(pm => pm.PaymentMethodId).UseIdentityColumn();
+
+            modelBuilder.Entity<PaymentStatus>().HasKey(ps => ps.PaymentStatusId);
+            modelBuilder.Entity<PaymentStatus>().Property(ps => ps.PaymentStatusId).UseIdentityColumn();
+
+            modelBuilder.Entity<Payment>().HasKey(p => p.PaymentId);
+            modelBuilder.Entity<Payment>().Property(p => p.PaymentId).UseIdentityColumn();
+
+            modelBuilder.Entity<ReservationStatus>().HasKey(rs => rs.ReservationStatusId);
+            modelBuilder.Entity<ReservationStatus>().Property(rs => rs.ReservationStatusId).UseIdentityColumn();
+
+            modelBuilder.Entity<Location>().HasKey(l => l.LocationId);
+            modelBuilder.Entity<Location>().Property(l => l.LocationId).UseIdentityColumn();
+
+            modelBuilder.Entity<CarBrand>().HasKey(cb => cb.BrandId);
+            modelBuilder.Entity<CarBrand>().Property(cb => cb.BrandId).UseIdentityColumn();
+
+            modelBuilder.Entity<CarCategory>().HasKey(cc => cc.CategoryId);
+            modelBuilder.Entity<CarCategory>().Property(cc => cc.CategoryId).UseIdentityColumn();
+
+            modelBuilder.Entity<FuelType>().HasKey(ft => ft.FuelTypeId);
+            modelBuilder.Entity<FuelType>().Property(ft => ft.FuelTypeId).UseIdentityColumn();
+
+            modelBuilder.Entity<CarStatus>().HasKey(cs => cs.CarStatusId);
+            modelBuilder.Entity<CarStatus>().Property(cs => cs.CarStatusId).UseIdentityColumn();
+
+            modelBuilder.Entity<Car>().HasKey(c => c.CarId);
+            modelBuilder.Entity<Car>().Property(c => c.CarId).UseIdentityColumn();
+
+            modelBuilder.Entity<CarImage>().HasKey(ci => ci.ImageId);
+            modelBuilder.Entity<CarImage>().Property(ci => ci.ImageId).UseIdentityColumn();
+
+            modelBuilder.Entity<Reservation>().HasKey(r => r.ReservationId);
+            modelBuilder.Entity<Reservation>().Property(r => r.ReservationId).UseIdentityColumn();
+
+        // configure the decimal percision
             modelBuilder.Entity<Car>()
                 .Property(c => c.PricePerDay)
                 .HasPrecision(18, 2);

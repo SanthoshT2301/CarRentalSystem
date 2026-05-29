@@ -2,9 +2,11 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace CarRentalSystem.Models
 {
+    [Index(nameof(Email),nameof(Phone),IsUnique =true)]
     public class User
     {
         [Key]
@@ -19,6 +21,7 @@ namespace CarRentalSystem.Models
         public string? LastName { get; set; }
 
         [Required]
+        
         [EmailAddress]
         [StringLength(255)]
         public string Email { get; set; } = string.Empty;

@@ -4,6 +4,8 @@ using CarRentalSystem.Service.Car;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarRentalSystem.Controller.Cars;
+[Route("api/[controller]/[action]")]
+[ApiController]
 public class CarController : ControllerBase
 {
     private readonly ICarService _carService;

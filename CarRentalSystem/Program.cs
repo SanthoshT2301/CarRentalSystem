@@ -1,5 +1,6 @@
 using CarRentalSystem.DATA;
 using CarRentalSystem.Service.Car;
+using CarRentalSystem.Service.Reservation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -23,6 +24,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             });
 
 builder.Services.AddScoped<ICarService, CarService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

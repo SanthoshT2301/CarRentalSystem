@@ -37,7 +37,16 @@ public class ReservationController : ControllerBase
 
             return Ok(result.Value);
     }
-    
+    [HttpDelete("{id}/cancel")]
+    public async Task<ActionResult<ReservationDto>> CancelBooking(int id)
+    {
+        var cancel=await _reservationService.CancelBooking(id);
+        if (cancel.Result is NotFoundObjectResult)
+        {
+            return cancel.Result;
+        }
+        return Ok(cancel.Value);
+    }
 
 
 }

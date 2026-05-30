@@ -6,5 +6,5 @@ public interface IReservationService
 {
     Task<ActionResult<ReservationDto>> CreateBooking(CreateReservationRequest request);
     Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings();
-    
+    Task<ActionResult<ReservationDto>> CancelBooking(int id);
 }

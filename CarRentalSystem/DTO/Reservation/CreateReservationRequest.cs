@@ -1,6 +1,7 @@
 namespace CarRentalSystem.DTO.Reservation;
  public class CreateReservationRequest
     {
+        public int UserId { get; set; }
         public int CarId { get; set; }
         public string PickupLocation { get; set; } = string.Empty;
         public string DropoffLocation { get; set; } = string.Empty;

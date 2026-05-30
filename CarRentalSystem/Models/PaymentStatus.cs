@@ -12,5 +12,7 @@ namespace CarRentalSystem.Models
         [Required]
         [StringLength(50)]
         public string StatusName { get; set; } = string.Empty;
+
+        
     }
 }

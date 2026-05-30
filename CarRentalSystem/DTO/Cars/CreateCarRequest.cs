@@ -10,6 +10,10 @@
         public decimal PricePerDay { get; set; }
         public string Address { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
+        public int NoSeats { get; set; }
+        public string Transmission { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
         public List<string> Features { get; set; } = new();
+        public string Mileage { get; set; } = string.Empty;
     }
 }

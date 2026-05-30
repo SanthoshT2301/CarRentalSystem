@@ -33,6 +33,26 @@ public class CarController : ControllerBase
         }
         return NotFound();
     }
+    [HttpPost]
+    public async Task<ActionResult<CarDto>> CreateCarAsync(CreateCarRequest request)
+    {
+        var car= await _carService.CreateCarAsync(request);
+        if (car!=null)
+        {
+            return Ok(car);
+        }
+        return BadRequest(new { Message = "Failed to create car" });
+    }
+    [HttpDelete]
+    public async Task<ActionResult<bool>> DeleteCarAsync(int id)
+    {
+        var car= await _carService.DeleteCarAsync(id);
+        if (car!=null)
+        {
+            return Ok(car);
+        }
+        return NotFound();
+        }
 }
 
     

@@ -27,7 +27,7 @@ public class CarController : ControllerBase
     public async Task<ActionResult<CarDto>> GetCarById(int id)
     {
         var car= await _carService.GetCarById(id);
-         if (car!=null)
+        if (car!=null)
         {
             return Ok(car);
         }
@@ -43,7 +43,7 @@ public class CarController : ControllerBase
         }
         return BadRequest(new { Message = "Failed to create car" });
     }
-    [HttpDelete]
+    [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> DeleteCarAsync(int id)
     {
         var car= await _carService.DeleteCarAsync(id);
@@ -54,5 +54,3 @@ public class CarController : ControllerBase
         return NotFound();
         }
 }
-
-    

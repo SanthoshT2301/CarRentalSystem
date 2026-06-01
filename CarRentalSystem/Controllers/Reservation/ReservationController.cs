@@ -14,9 +14,9 @@ public class ReservationController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings()
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings(int userId)
     {
-        var reservation=await _reservationService.GetMyBookings();
+        var reservation=await _reservationService.GetMyBookings(userId);
         if (reservation.Result is NotFoundObjectResult)
         {
             return reservation.Result;
@@ -25,9 +25,9 @@ public class ReservationController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ReservationDto>> CreateBooking(CreateReservationRequest request)
+    public async Task<ActionResult<ReservationDto>> CreateBooking(int userId,CreateReservationRequest request)
     {
-        var result = await _reservationService.CreateBooking(request);
+        var result = await _reservationService.CreateBooking(userId,request);
 
             if (result.Result is NotFoundObjectResult)
                 return result.Result;
@@ -38,15 +38,26 @@ public class ReservationController : ControllerBase
             return Ok(result.Value);
     }
     [HttpDelete("{id}/cancel")]
-    public async Task<ActionResult<ReservationDto>> CancelBooking(int id)
+    public async Task<ActionResult<ReservationDto>> CancelBooking(int id,int userId,bool isAdmin)
     {
-        var cancel=await _reservationService.CancelBooking(id);
+        var cancel=await _reservationService.CancelBooking(id,userId,isAdmin);
         if (cancel.Result is NotFoundObjectResult)
         {
             return cancel.Result;
         }
         return Ok(cancel.Value);
     }
+     [HttpPut("{id}/return")]
+        public async Task<ActionResult<bool>> ReturnCar(int id,int userId,bool isAdmin)
+        {
+          
+            
+                var result = await _reservationService.ReturnCarAsync(id, userId, isAdmin);
+                if (result.Value == false)
+                {
+                    return NotFound(new { error = "Booking reservation not found." });
+                }
+                return Ok(new { message = "Vehicle returned successfully. You can now write a review about the vehicle and our services." });
+        }
 
-
-}
+        }

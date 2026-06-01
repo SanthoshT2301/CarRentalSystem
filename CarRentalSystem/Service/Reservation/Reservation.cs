@@ -15,7 +15,7 @@ public class ReservationService : IReservationService
 
     
 
-    public async Task<ActionResult<ReservationDto>> CreateBooking(CreateReservationRequest request)
+    public async Task<ActionResult<ReservationDto>> CreateBooking(int userId,CreateReservationRequest request)
     {
         var car=await _appDbContext.Cars.FindAsync(request.CarId);
         if (car == null)
@@ -54,10 +54,45 @@ var TotalAmount = car.PricePerDay * totalDays;
 
 
         var status=await _appDbContext.ReservationStatuses.FindAsync(1);
-        
+        DateTime pDate;
+            DateTime dDate;
+
+            if (request.IsHourly)
+            {
+                DateTime.TryParse(request.PickupDate, out var parsedDateOnly);
+                if (parsedDateOnly == DateTime.MinValue)
+                {
+                    parsedDateOnly = DateTime.UtcNow.Date;
+                }
+
+                if (!string.IsNullOrEmpty(request.PickupTime) && TimeSpan.TryParse(request.PickupTime, out var pTime))
+                {
+                    pDate = parsedDateOnly.Date.Add(pTime);
+                }
+                else
+                {
+                    pDate = parsedDateOnly.Date.AddHours(12); 
+                }
+
+                int hours = request.DurationHours > 0 ? request.DurationHours : 1;
+                dDate = pDate.AddHours(hours);
+            }
+            else
+            {
+                DateTime.TryParse(request.PickupDate, out pDate);
+                DateTime.TryParse(request.DropoffDate, out dDate);
+
+                if (pDate == DateTime.MinValue) pDate = DateTime.UtcNow;
+                if (dDate == DateTime.MinValue) dDate = pDate.AddDays(3);
+            }
+
+            var hourlyRateSymbolic = Math.Ceiling((car.PricePerDay ?? 50.00m) / 10);
+            var computedTotal = request.IsHourly
+                ? (hourlyRateSymbolic * (request.DurationHours > 0 ? request.DurationHours : 1))
+                : (car.PricePerDay ?? 50.00m) * Math.Max(1, (decimal)(dDate - pDate).TotalDays);
         var reservation=new CarRentalSystem.Models.Reservation
         {
-                UserId=request.UserId,
+                UserId=userId,
                 CarId = request.CarId,
                 PickupLocationId = pickupLoc.LocationId,
                 DropoffLocationId = dropoffLoc.LocationId,
@@ -66,6 +101,9 @@ var TotalAmount = car.PricePerDay * totalDays;
                 DropDate = dropoffDate ,
                 TotalAmount = car.PricePerDay * totalDays,
                 Address = request.Address,
+                IsHourly = request.IsHourly,
+                DurationHours = request.DurationHours,
+                PickupTime = request.PickupTime,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
         };
@@ -131,81 +169,90 @@ var TotalAmount = car.PricePerDay * totalDays;
         return reservationDto;
     }
 
-    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings()
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings(int userId)
 {
-    var myReservations = await _appDbContext.Reservations
-        .Include(r => r.PickupLocation)
-        .Include(r => r.DropoffLocation)
-        .Include(r => r.ReservationStatus)
-        .ToListAsync();
+     var myReservations = await _appDbContext.Reservations
+                .Include(r => r.PickupLocation)
+                .Include(r => r.DropoffLocation)
+                .Include(r => r.ReservationStatus)
+                .Where(r => r.UserId == userId)
+                .ToListAsync();
 
-    if (!myReservations.Any())
-    {
-        return new NotFoundObjectResult("No reservations found");
-    }
+            var reservationIds = myReservations.Select(r => r.ReservationId).ToList();
+            var reviewsMap = await _appDbContext.Reviews
+                .Where(rv => reservationIds.Contains(rv.ReservationId))
+                .ToDictionaryAsync(rv => rv.ReservationId, rv => rv.ReviewId);
 
-    var reservationsDto = myReservations.Select(reservation => new ReservationDto
-    {
-        Id = reservation.ReservationId,
-        CarId = reservation.CarId,
-        UserId = reservation.UserId,
-        PickupLocation = reservation.PickupLocation?.LocationName ?? string.Empty,
-        DropoffLocation = reservation.DropoffLocation?.LocationName ?? string.Empty,
-        PickupDate = reservation.PickupDate.ToString("yyyy-MM-dd"),
-        DropoffDate = reservation.DropDate.ToString("yyyy-MM-dd"),
-        TotalAmount = (decimal)reservation.TotalAmount,
-        Address = reservation.Address ?? string.Empty,
-        Status = reservation.ReservationStatus?.StatusName ?? string.Empty
-    }).ToList();
+            var dtos = myReservations.Select(r => new ReservationDto
+            {
+                Id = r.ReservationId,
+                CarId = r.CarId,
+                UserId = r.UserId,
+                PickupLocation = r.PickupLocation?.LocationName ?? "",
+                DropoffLocation = r.DropoffLocation?.LocationName ?? "",
+                PickupDate = r.PickupDate.ToString("yyyy-MM-dd"),
+                DropoffDate = r.DropDate.ToString("yyyy-MM-dd"),
+                TotalAmount = (decimal)r.TotalAmount,
+                Address = r.Address ?? "",
+                Status = r.ReservationStatus?.StatusName ?? "",
+                IsHourly = r.IsHourly,
+                DurationHours = r.DurationHours,
+                PickupTime = r.PickupTime
+            }).ToList();
 
-    return reservationsDto;
+            return dtos;
 }
-   public async Task<ActionResult<ReservationDto>> CancelBooking(int id)
+   public async Task<ActionResult<bool>> CancelBooking(int id,int userId,bool isAdmin)
 {
-    var reservation = await _appDbContext.Reservations
-        .FirstOrDefaultAsync(r => r.ReservationId == id);
+    var res = await _appDbContext.Reservations.FindAsync(id);
+            if (res == null)
+            {
+                return false;
+            }
 
-    if (reservation == null)
-    {
-        return new NotFoundObjectResult("No reservation with that ID");
-    }
+            if (!isAdmin && res.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("Unauthorized booking access.");
+            }
 
-    reservation.ReservationStatusId = 3;
-    reservation.UpdatedAt = DateTime.UtcNow;
+            res.ReservationStatusId = 3; 
+            res.UpdatedAt = DateTime.UtcNow;
 
-    var payment = await _appDbContext.Payments
-        .FirstOrDefaultAsync(p => p.ReservationId == id);
+            var payment = await _appDbContext.Payments.FirstOrDefaultAsync(p => p.ReservationId == id);
+            if (payment != null)
+            {
+                payment.PaymentStatusId = 3; 
+            }
 
-    if (payment != null)
-    {
-        payment.PaymentStatusId = 3;
-    }
-
-    await _appDbContext.SaveChangesAsync();
-
-    var reloaded = await _appDbContext.Reservations
-        .Include(r => r.PickupLocation)
-        .Include(r => r.DropoffLocation)
-        .Include(r => r.ReservationStatus)
-        .FirstOrDefaultAsync(r => r.ReservationId == id);
-
-    if (reloaded == null)
-    {
-        return new NotFoundObjectResult("Reservation not found");
-    }
-
-    return new ReservationDto
-    {
-        Id = reloaded.ReservationId,
-        CarId = reloaded.CarId,
-        UserId = reloaded.UserId,
-        PickupLocation = reloaded.PickupLocation?.LocationName ?? string.Empty,
-        DropoffLocation = reloaded.DropoffLocation?.LocationName ?? string.Empty,
-        PickupDate = reloaded.PickupDate.ToString("yyyy-MM-dd"),
-        DropoffDate = reloaded.DropDate.ToString("yyyy-MM-dd"),
-        TotalAmount = (decimal)reloaded.TotalAmount,
-        Address = reloaded.Address ?? string.Empty,
-        Status = reloaded.ReservationStatus?.StatusName ?? string.Empty
-    };
+            await _appDbContext.SaveChangesAsync();
+            return true;
 }
+
+    public async Task<ActionResult<bool>> ReturnCarAsync(int id, int userId, bool isAdmin)
+    {
+       var res = await _appDbContext.Reservations
+                .Include(r => r.ReservationStatus)
+                .FirstOrDefaultAsync(r => r.ReservationId == id);
+
+            if (res == null)
+            {
+                return false;
+            }
+
+            if (!isAdmin && res.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("Unauthorized booking access.");
+            }
+
+            if (res.ReservationStatusId == 3) 
+            {
+                throw new InvalidOperationException("Cannot return a cancelled booking.");
+            }
+
+            res.ReservationStatusId = 2; // Completed
+            res.UpdatedAt = DateTime.UtcNow;
+
+            await _appDbContext.SaveChangesAsync();
+            return true;
+    }
 }

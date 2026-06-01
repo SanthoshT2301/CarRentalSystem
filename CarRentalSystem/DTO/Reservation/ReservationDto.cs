@@ -1,7 +1,7 @@
     namespace CarRentalSystem.DTO.Reservation;
  public class ReservationDto
     {
-        public int Id { get; set; }
+    public int Id { get; set; }
         public int CarId { get; set; }
         public int UserId { get; set; }
         public string PickupLocation { get; set; } = string.Empty;
@@ -11,4 +11,7 @@
         public decimal TotalAmount { get; set; }
         public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = "confirmed";
+        public bool IsHourly { get; set; }
+        public int DurationHours { get; set; }
+        public string? PickupTime { get; set; }
     }

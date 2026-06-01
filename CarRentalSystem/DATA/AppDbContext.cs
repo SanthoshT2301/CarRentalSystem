@@ -29,7 +29,7 @@ namespace CarRentalSystem.DATA
         {
             base.OnModelCreating(modelBuilder);
     
- // Configure primary keys (naming convention maps automatically, but specifying explicitly creates solid metadata)
+
             modelBuilder.Entity<Role>().HasKey(r => r.RoleId);
             modelBuilder.Entity<Role>().Property(r => r.RoleId).UseIdentityColumn();
 
@@ -75,7 +75,7 @@ namespace CarRentalSystem.DATA
             modelBuilder.Entity<Reservation>().HasKey(r => r.ReservationId);
             modelBuilder.Entity<Reservation>().Property(r => r.ReservationId).UseIdentityColumn();
 
-        // configure the decimal percision
+
             modelBuilder.Entity<Car>()
                 .Property(c => c.PricePerDay)
                 .HasPrecision(18, 2);
@@ -154,7 +154,7 @@ namespace CarRentalSystem.DATA
                     Email = "admin@roadready.com",
                     Phone = "+15550199",
                     PasswordHash = "$2a$11$7rM0gV3cf8VUy/Lc49Wtce4FISYjyln1iDrRka/tBoed9uK8DDz6u",
-                    RoleId = 1, // Admin
+                    RoleId = 1, 
                     IsActive = true
                 },
                 new User
@@ -165,7 +165,7 @@ namespace CarRentalSystem.DATA
                     Email = "user@roadready.com",
                     Phone = "+15550100",
                     PasswordHash = "$2a$11$s9JQbOQPQP/Ngrtjc1ChxO8x0V5slmPpZ0w.AgslPk9NKxrE9ycSa",
-                    RoleId = 2, // Customer
+                    RoleId = 2,
                     IsActive = true
                 }
             );

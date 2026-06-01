@@ -255,4 +255,37 @@ var TotalAmount = car.PricePerDay * totalDays;
             await _appDbContext.SaveChangesAsync();
             return true;
     }
+
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetAllBookingsAsync()
+    {
+         var reservations = await _appDbContext.Reservations
+                .Include(r => r.PickupLocation)
+                .Include(r => r.DropoffLocation)
+                .Include(r => r.ReservationStatus)
+                .ToListAsync();
+
+            var reservationIds = reservations.Select(r => r.ReservationId).ToList();
+            var reviewsMap = await _appDbContext.Reviews
+                .Where(rv => reservationIds.Contains(rv.ReservationId))
+                .ToDictionaryAsync(rv => rv.ReservationId, rv => rv.ReviewId);
+
+            var dtos = reservations.Select(r => new ReservationDto
+            {
+                Id = r.ReservationId,
+                CarId = r.CarId,
+                UserId = r.UserId,
+                PickupLocation = r.PickupLocation?.LocationName ?? "",
+                DropoffLocation = r.DropoffLocation?.LocationName ?? "",
+                PickupDate = r.PickupDate.ToString("yyyy-MM-dd"),
+                DropoffDate = r.DropDate.ToString("yyyy-MM-dd"),
+                TotalAmount = (decimal)r.TotalAmount,
+                Address = r.Address ?? "",
+                Status = r.ReservationStatus?.StatusName ?? "",
+                IsHourly = r.IsHourly,
+                DurationHours = r.DurationHours,
+                PickupTime = r.PickupTime
+            }).ToList();
+
+            return dtos;
+    }
 }

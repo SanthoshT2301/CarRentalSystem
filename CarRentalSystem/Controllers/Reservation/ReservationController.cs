@@ -59,5 +59,17 @@ public class ReservationController : ControllerBase
                 }
                 return Ok(new { message = "Vehicle returned successfully. You can now write a review about the vehicle and our services." });
         }
-
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ReservationDto>>> GetAllBookingsAsync()
+        {
+            var reservation=await _reservationService.GetAllBookingsAsync();
+            if (reservation.Value.Any())
+            {
+                return Ok(reservation.Value);
+            }
+            else
+            {
+                return NotFound(new { error = "No reservations found." });
+            }
         }
+}

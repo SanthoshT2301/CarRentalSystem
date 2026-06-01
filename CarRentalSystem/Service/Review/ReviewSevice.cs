@@ -128,4 +128,24 @@ public class ReviewService : IReviewService
 
     return reviewsdto;
 }
+
+    public async Task<ActionResult<int>> GetReviewCountForCarAsync(int carId)
+    {
+        return await _appDbContext.Reviews
+                .CountAsync(r => r.Reservation != null && r.Reservation.CarId == carId);
+    }
+    public async Task<ActionResult<double>> GetAverageRatingForCarAsync(int carId)
+    {
+        var ratings = await _appDbContext.Reviews
+                .Where(r => r.Reservation != null && r.Reservation.CarId == carId && r.Rating != null)
+                .Select(r => r.Rating.Value)
+                .ToListAsync();
+
+            if (!ratings.Any())
+            {
+                return 4.8;
+            }
+
+            return Math.Round(ratings.Average(), 1);
+    }
 }

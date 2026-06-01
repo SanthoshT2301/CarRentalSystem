@@ -1,4 +1,5 @@
 using CarRentalSystem.DATA;
+using CarRentalSystem.Service.Admin;
 using CarRentalSystem.Service.Car;
 using CarRentalSystem.Service.Reservation;
 using CarRentalSystem.Service.Review;
@@ -27,6 +28,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 var app = builder.Build();
 

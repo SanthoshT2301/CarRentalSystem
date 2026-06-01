@@ -9,20 +9,15 @@ namespace CarRentalSystem.Controller.Admin;
     
     public class AdminController : ControllerBase
     {
-        private readonly IReservationService _bookingService;
+
         private readonly IAdminService _adminService;
-        private readonly IReviewService _reviewService;
 
-        public AdminController(
-            IReservationService bookingService,
-            IAdminService adminService,
-            IReviewService reviewService)
+        public AdminController(IAdminService adminService)
         {
-            _bookingService = bookingService;
+            
             _adminService = adminService;
-            _reviewService = reviewService;
+            
         }
-
 
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()

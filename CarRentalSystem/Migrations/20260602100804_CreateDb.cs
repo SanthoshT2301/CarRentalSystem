@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CarRentalSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class IntialDBCreate : Migration
+    public partial class CreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -105,6 +105,22 @@ namespace CarRentalSystem.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PaymentStatuses", x => x.PaymentStatusId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Promotions",
+                columns: table => new
+                {
+                    PromotionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DiscountPercent = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Active = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Promotions", x => x.PromotionId);
                 });
 
             migrationBuilder.CreateTable(
@@ -237,6 +253,30 @@ namespace CarRentalSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MaintenanceAlerts",
+                columns: table => new
+                {
+                    MaintenanceAlertId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CarId = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Priority = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ReportedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaintenanceAlerts", x => x.MaintenanceAlertId);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceAlerts_Cars_CarId",
+                        column: x => x.CarId,
+                        principalTable: "Cars",
+                        principalColumn: "CarId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Reservations",
                 columns: table => new
                 {
@@ -251,6 +291,9 @@ namespace CarRentalSystem.Migrations
                     DropDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    IsHourly = table.Column<bool>(type: "bit", nullable: false),
+                    DurationHours = table.Column<int>(type: "int", nullable: false),
+                    PickupTime = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -284,6 +327,54 @@ namespace CarRentalSystem.Migrations
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CheckinDetails",
+                columns: table => new
+                {
+                    CheckinDetailsId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ReservationId = table.Column<int>(type: "int", nullable: false),
+                    MileageIn = table.Column<int>(type: "int", nullable: false),
+                    FuelIn = table.Column<int>(type: "int", nullable: false),
+                    Damages = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    AgentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CheckinDetails", x => x.CheckinDetailsId);
+                    table.ForeignKey(
+                        name: "FK_CheckinDetails_Reservations_ReservationId",
+                        column: x => x.ReservationId,
+                        principalTable: "Reservations",
+                        principalColumn: "ReservationId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CheckoutDetails",
+                columns: table => new
+                {
+                    CheckoutDetailsId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ReservationId = table.Column<int>(type: "int", nullable: false),
+                    DriverLicense = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    MileageOut = table.Column<int>(type: "int", nullable: false),
+                    FuelOut = table.Column<int>(type: "int", nullable: false),
+                    AgentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CheckoutDetails", x => x.CheckoutDetailsId);
+                    table.ForeignKey(
+                        name: "FK_CheckoutDetails_Reservations_ReservationId",
+                        column: x => x.ReservationId,
+                        principalTable: "Reservations",
+                        principalColumn: "ReservationId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -342,7 +433,8 @@ namespace CarRentalSystem.Migrations
                         name: "FK_Reviews_Reservations_ReservationId",
                         column: x => x.ReservationId,
                         principalTable: "Reservations",
-                        principalColumn: "ReservationId");
+                        principalColumn: "ReservationId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Reviews_Users_UserId",
                         column: x => x.UserId,
@@ -379,7 +471,8 @@ namespace CarRentalSystem.Migrations
                 {
                     { 1, "Available" },
                     { 2, "Rented" },
-                    { 3, "Maintenance" }
+                    { 3, "In Maintenance" },
+                    { 4, "Clean-up Required" }
                 });
 
             migrationBuilder.InsertData(
@@ -421,6 +514,16 @@ namespace CarRentalSystem.Migrations
                     { 1, "Paid" },
                     { 2, "Pending" },
                     { 3, "Refunded" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Promotions",
+                columns: new[] { "PromotionId", "Active", "Code", "Description", "DiscountPercent" },
+                values: new object[,]
+                {
+                    { 1, true, "ROADDEAL10", "10% Off Your Next Car Reservation!", 10 },
+                    { 2, false, "SUMMER25", "Seasonal 25% Discount for summer rentals", 25 },
+                    { 3, true, "WEEKENDVIP", "Weekend getaway discount for premium vehicles", 15 }
                 });
 
             migrationBuilder.InsertData(
@@ -504,6 +607,21 @@ namespace CarRentalSystem.Migrations
                 column: "LocationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CheckinDetails_ReservationId",
+                table: "CheckinDetails",
+                column: "ReservationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CheckoutDetails_ReservationId",
+                table: "CheckoutDetails",
+                column: "ReservationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceAlerts_CarId",
+                table: "MaintenanceAlerts",
+                column: "CarId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Payments_PaymentMethodId",
                 table: "Payments",
                 column: "PaymentMethodId");
@@ -573,7 +691,19 @@ namespace CarRentalSystem.Migrations
                 name: "CarImages");
 
             migrationBuilder.DropTable(
+                name: "CheckinDetails");
+
+            migrationBuilder.DropTable(
+                name: "CheckoutDetails");
+
+            migrationBuilder.DropTable(
+                name: "MaintenanceAlerts");
+
+            migrationBuilder.DropTable(
                 name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "Promotions");
 
             migrationBuilder.DropTable(
                 name: "Reviews");

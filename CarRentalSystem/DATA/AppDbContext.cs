@@ -5,7 +5,7 @@ namespace CarRentalSystem.DATA
 {
     public class AppDbContext:DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+       public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
 
@@ -24,11 +24,14 @@ namespace CarRentalSystem.DATA
         public DbSet<Car> Cars { get; set; }
         public DbSet<CarImage> CarImages { get; set; }
         public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<Promotion> Promotions { get; set; }
+        public DbSet<MaintenanceAlert> MaintenanceAlerts { get; set; }
+        public DbSet<CheckoutDetails> CheckoutDetails { get; set; }
+        public DbSet<CheckinDetails> CheckinDetails { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-    
 
             modelBuilder.Entity<Role>().HasKey(r => r.RoleId);
             modelBuilder.Entity<Role>().Property(r => r.RoleId).UseIdentityColumn();
@@ -75,6 +78,17 @@ namespace CarRentalSystem.DATA
             modelBuilder.Entity<Reservation>().HasKey(r => r.ReservationId);
             modelBuilder.Entity<Reservation>().Property(r => r.ReservationId).UseIdentityColumn();
 
+            modelBuilder.Entity<Promotion>().HasKey(p => p.PromotionId);
+            modelBuilder.Entity<Promotion>().Property(p => p.PromotionId).UseIdentityColumn();
+
+            modelBuilder.Entity<MaintenanceAlert>().HasKey(ma => ma.MaintenanceAlertId);
+            modelBuilder.Entity<MaintenanceAlert>().Property(ma => ma.MaintenanceAlertId).UseIdentityColumn();
+
+            modelBuilder.Entity<CheckoutDetails>().HasKey(cod => cod.CheckoutDetailsId);
+            modelBuilder.Entity<CheckoutDetails>().Property(cod => cod.CheckoutDetailsId).UseIdentityColumn();
+
+            modelBuilder.Entity<CheckinDetails>().HasKey(cid => cid.CheckinDetailsId);
+            modelBuilder.Entity<CheckinDetails>().Property(cid => cid.CheckinDetailsId).UseIdentityColumn();
 
             modelBuilder.Entity<Car>()
                 .Property(c => c.PricePerDay)
@@ -88,7 +102,6 @@ namespace CarRentalSystem.DATA
                 .Property(r => r.TotalAmount)
                 .HasPrecision(18, 2);
 
-     
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleName = "Admin" },
                 new Role { RoleId = 2, RoleName = "Customer" }
@@ -142,7 +155,14 @@ namespace CarRentalSystem.DATA
             modelBuilder.Entity<CarStatus>().HasData(
                 new CarStatus { CarStatusId = 1, StatusName = "Available" },
                 new CarStatus { CarStatusId = 2, StatusName = "Rented" },
-                new CarStatus { CarStatusId = 3, StatusName = "Maintenance" }
+                new CarStatus { CarStatusId = 3, StatusName = "In Maintenance" },
+                new CarStatus { CarStatusId = 4, StatusName = "Clean-up Required" }
+            );
+
+            modelBuilder.Entity<Promotion>().HasData(
+                new Promotion { PromotionId = 1, Code = "ROADDEAL10", DiscountPercent = 10, Description = "10% Off Your Next Car Reservation!", Active = true },
+                new Promotion { PromotionId = 2, Code = "SUMMER25", DiscountPercent = 25, Description = "Seasonal 25% Discount for summer rentals", Active = false },
+                new Promotion { PromotionId = 3, Code = "WEEKENDVIP", DiscountPercent = 15, Description = "Weekend getaway discount for premium vehicles", Active = true }
             );
 
             modelBuilder.Entity<User>().HasData(
@@ -153,8 +173,8 @@ namespace CarRentalSystem.DATA
                     LastName = "Admin",
                     Email = "admin@roadready.com",
                     Phone = "+15550199",
-                    PasswordHash = "$2a$11$7rM0gV3cf8VUy/Lc49Wtce4FISYjyln1iDrRka/tBoed9uK8DDz6u",
-                    RoleId = 1, 
+                    PasswordHash = "$2a$11$7rM0gV3cf8VUy/Lc49Wtce4FISYjyln1iDrRka/tBoed9uK8DDz6u",//admin123
+                    RoleId = 1, // Admin
                     IsActive = true
                 },
                 new User
@@ -164,101 +184,94 @@ namespace CarRentalSystem.DATA
                     LastName = "Doe",
                     Email = "user@roadready.com",
                     Phone = "+15550100",
-                    PasswordHash = "$2a$11$s9JQbOQPQP/Ngrtjc1ChxO8x0V5slmPpZ0w.AgslPk9NKxrE9ycSa",
-                    RoleId = 2,
+                    PasswordHash = "$2a$11$s9JQbOQPQP/Ngrtjc1ChxO8x0V5slmPpZ0w.AgslPk9NKxrE9ycSa",//password123
+                    RoleId = 2, // Customer
                     IsActive = true
                 }
             );
 
             modelBuilder.Entity<Car>().HasData(
-                new Car
-                {
-                    CarId = 1,
-                    BrandId = 1,
-                    CategoryId = 1,
-                    FuelTypeId = 1,
-                    CarStatusId = 1,
-                    LocationId = 1,
-                    Model = "Model 3",
-                    CarYear = 2023,
-                    Color = "Midnight Silver",
-                    NoSeats = 5,
-                    Transmission = "Automatic",
-                    Mileage = "Brand New",
-                    PricePerDay = 120.00m
+                new Car 
+                { 
+                    CarId = 1, 
+                    BrandId = 1, 
+                    CategoryId = 1, 
+                    FuelTypeId = 1, 
+                    CarStatusId = 1, 
+                    LocationId = 1, 
+                    Model = "Model 3", 
+                    CarYear = 2023, 
+                    Color = "Midnight Silver", 
+                    NoSeats = 5, 
+                    Transmission = "Automatic", 
+                    Mileage = "Brand New", 
+                    PricePerDay = 120.00m 
                 },
-                new Car
-                {
-                    CarId = 2,
-                    BrandId = 2,
-                    CategoryId = 2,
-                    FuelTypeId = 2,
-                    CarStatusId = 1,
-                    LocationId = 2,
-                    Model = "Camry",
-                    CarYear = 2022,
-                    Color = "Super White",
-                    NoSeats = 5,
-                    Transmission = "Automatic",
-                    Mileage = "15,000 mi",
-                    PricePerDay = 55.00m
+                new Car 
+                { 
+                    CarId = 2, 
+                    BrandId = 2, 
+                    CategoryId = 2, 
+                    FuelTypeId = 2, 
+                    CarStatusId = 1, 
+                    LocationId = 2, 
+                    Model = "Camry", 
+                    CarYear = 2022, 
+                    Color = "Super White", 
+                    NoSeats = 5, 
+                    Transmission = "Automatic", 
+                    Mileage = "15,000 mi", 
+                    PricePerDay = 55.00m 
                 },
-                new Car
-                {
-                    CarId = 3,
-                    BrandId = 3,
-                    CategoryId = 3,
-                    FuelTypeId = 2,
-                    CarStatusId = 1,
-                    LocationId = 3,
-                    Model = "Wrangler",
-                    CarYear = 2021,
-                    Color = "Sarge Green",
-                    NoSeats = 4,
-                    Transmission = "Automatic",
-                    Mileage = "22,000 mi",
-                    PricePerDay = 85.00m
+                new Car 
+                { 
+                    CarId = 3, 
+                    BrandId = 3, 
+                    CategoryId = 3, 
+                    FuelTypeId = 2, 
+                    CarStatusId = 1, 
+                    LocationId = 3, 
+                    Model = "Wrangler", 
+                    CarYear = 2021, 
+                    Color = "Sarge Green", 
+                    NoSeats = 4, 
+                    Transmission = "Automatic", 
+                    Mileage = "22,000 mi", 
+                    PricePerDay = 85.00m 
                 },
-                new Car
-                {
-                    CarId = 4,
-                    BrandId = 4,
-                    CategoryId = 4,
-                    FuelTypeId = 3,
-                    CarStatusId = 1,
-                    LocationId = 4,
-                    Model = "Civic",
-                    CarYear = 2022,
-                    Color = "Sonic Gray",
-                    NoSeats = 5,
-                    Transmission = "Automatic",
-                    Mileage = "10,000 mi",
-                    PricePerDay = 45.00m
+                new Car 
+                { 
+                    CarId = 4, 
+                    BrandId = 4, 
+                    CategoryId = 4, 
+                    FuelTypeId = 3, 
+                    CarStatusId = 1, 
+                    LocationId = 4, 
+                    Model = "Civic", 
+                    CarYear = 2022, 
+                    Color = "Sonic Gray", 
+                    NoSeats = 5, 
+                    Transmission = "Automatic", 
+                    Mileage = "10,000 mi", 
+                    PricePerDay = 45.00m 
                 }
             );
             modelBuilder.Entity<Reservation>()
-    .HasOne(r => r.PickupLocation)
-    .WithMany()
-    .HasForeignKey(r => r.PickupLocationId)
-    .OnDelete(DeleteBehavior.NoAction);
+        .HasOne(r => r.PickupLocation)
+        .WithMany()
+        .HasForeignKey(r => r.PickupLocationId)
+        .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<Reservation>()
-                .HasOne(r => r.DropoffLocation)
-                .WithMany()
-                .HasForeignKey(r => r.DropoffLocationId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Review>()
+    modelBuilder.Entity<Reservation>()
+        .HasOne(r => r.DropoffLocation)
+        .WithMany()
+        .HasForeignKey(r => r.DropoffLocationId)
+        .OnDelete(DeleteBehavior.NoAction);
+        modelBuilder.Entity<Review>()
     .HasOne(r => r.User)
     .WithMany()
     .HasForeignKey(r => r.UserId)
     .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Review>()
-                .HasOne(r => r.Reservation)
-                .WithMany()
-                .HasForeignKey(r => r.ReservationId)
-                .OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<CarImage>().HasData(
                 new CarImage { ImageId = 1, CarId = 1, ImageUrl = "https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=800" },
                 new CarImage { ImageId = 2, CarId = 2, ImageUrl = "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=800" },
@@ -268,3 +281,4 @@ namespace CarRentalSystem.DATA
         }
     }
 }
+

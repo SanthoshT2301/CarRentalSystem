@@ -1,5 +1,6 @@
 using CarRentalSystem.DTO.Reservation;
 using CarRentalSystem.Service.Reservation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarRentalSystem.Controller.Reservation;
@@ -17,9 +18,9 @@ public class ReservationController : ControllerBase
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings(int userId)
     {
         var reservation=await _reservationService.GetMyBookings(userId);
-        if (reservation.Result is NotFoundObjectResult)
+        if (!reservation.Value.Any())
         {
-            return reservation.Result;
+            return NotFound("No reservations found.");
         }
         return Ok(reservation);
     }
@@ -50,8 +51,6 @@ public class ReservationController : ControllerBase
      [HttpPut("{id}/return")]
         public async Task<ActionResult<bool>> ReturnCar(int id,int userId,bool isAdmin)
         {
-          
-            
                 var result = await _reservationService.ReturnCarAsync(id, userId, isAdmin);
                 if (result.Value == false)
                 {

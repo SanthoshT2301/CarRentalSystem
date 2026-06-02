@@ -5,6 +5,7 @@ using CarRentalSystem.Service.Reservation;
 using CarRentalSystem.Service.Review;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using CarRentalSystem.Service.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,7 @@ builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAuthentication, AuthenticationService>();
 
 var app = builder.Build();
 

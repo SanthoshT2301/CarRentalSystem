@@ -8,6 +8,7 @@ using Microsoft.OpenApi;
 using CarRentalSystem.Service.Authentication;
 using CarRentalSystem.Service.Promotions;
 using CarRentalSystem.Service.Maintenances;
+using CarRentalSystem.Service.Logistics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,8 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAuthentication, AuthenticationService>();
 builder.Services.AddScoped<IPromotionService, PromotionService>();
 builder.Services.AddScoped<IMaintenanceService,MaintenanceService>();
+builder.Services.AddScoped<IGateLogisticsService, GateLogisticsService>();
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();

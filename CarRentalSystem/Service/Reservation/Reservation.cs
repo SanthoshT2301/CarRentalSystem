@@ -85,7 +85,17 @@ var TotalAmount = car.PricePerDay * totalDays;
                 if (pDate == DateTime.MinValue) pDate = DateTime.UtcNow;
                 if (dDate == DateTime.MinValue) dDate = pDate.AddDays(3);
             }
+             var isAlreadyBooked = await _appDbContext.Reservations
+                .AnyAsync(r => r.CarId == request.CarId 
+                    && r.ReservationStatusId == 1 // Active / Confirmed reservation
+                    && ((pDate >= r.PickupDate && pDate < r.DropDate) 
+                        || (dDate > r.PickupDate && dDate <= r.DropDate) 
+                        || (pDate <= r.PickupDate && dDate >= r.DropDate)));
 
+            if (isAlreadyBooked)
+            {
+                throw new InvalidOperationException("This vehicle is already booked for the requested period. Please choose another car or choose a different time window.");
+            }
             var hourlyRateSymbolic = Math.Ceiling((car.PricePerDay ?? 50.00m) / 10);
             var computedTotal = request.IsHourly
                 ? (hourlyRateSymbolic * (request.DurationHours > 0 ? request.DurationHours : 1))
@@ -231,6 +241,7 @@ var TotalAmount = car.PricePerDay * totalDays;
     public async Task<ActionResult<bool>> ReturnCarAsync(int id, int userId, bool isAdmin)
     {
        var res = await _appDbContext.Reservations
+                .Include(r => r.Car)
                 .Include(r => r.ReservationStatus)
                 .FirstOrDefaultAsync(r => r.ReservationId == id);
 
@@ -251,7 +262,10 @@ var TotalAmount = car.PricePerDay * totalDays;
 
             res.ReservationStatusId = 2; // Completed
             res.UpdatedAt = DateTime.UtcNow;
-
+            if (res.Car != null)
+            {
+                res.Car.CarStatusId = 1; // Available
+            }
             await _appDbContext.SaveChangesAsync();
             return true;
     }

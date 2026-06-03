@@ -13,27 +13,26 @@ namespace CarRentalSystem.Migrations;
     {
         public MappingProfile()
         {
-            // Promotion <-> DTO
+    
             CreateMap<Promotion, PromotionDto>();
             CreateMap<CreatePromotionRequest, Promotion>()
                 .ForMember(dest => dest.Code, opt => opt.MapFrom(src => src.Code.ToUpper()));
-
-            // MaintenanceAlert <-> DTO
+            
             CreateMap<MaintenanceAlert, MaintenanceAlertDto>()
                 .ForMember(dest => dest.CarName, opt => opt.MapFrom(src => src.Car != null 
                     ? (src.Car.Brand != null ? $"{src.Car.Brand.BrandName} {src.Car.Model}" : src.Car.Model) 
                     : "Vehicle"));
             CreateMap<CreateMaintenanceAlertRequest, MaintenanceAlert>();
 
-            // CheckoutDetails <-> DTO
+            
             CreateMap<CheckoutDetails, CheckoutDetailsDto>();
             CreateMap<GateCheckoutRequest, CheckoutDetails>();
 
-            // CheckinDetails <-> DTO
+            
             CreateMap<CheckinDetails, CheckinDetailsDto>();
             CreateMap<GateCheckinRequest, CheckinDetails>();
 
-            // Reservation <-> DTO
+            
             CreateMap<Reservation, ReservationDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ReservationId))
                 .ForMember(dest => dest.PickupLocation, opt => opt.MapFrom(src => src.PickupLocation != null ? src.PickupLocation.LocationName : "San Francisco"))
@@ -44,7 +43,7 @@ namespace CarRentalSystem.Migrations;
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ReservationStatus != null ? src.ReservationStatus.StatusName.ToLower() : "confirmed"));
             CreateMap<CreateReservationRequest, Reservation>();
 
-            // Review <-> DTO
+            
             CreateMap<Review, ReviewDto>()
                 .ForMember(dest => dest.CarId, opt => opt.MapFrom(src => src.Reservation != null ? src.Reservation.CarId : 0))
                 .ForMember(dest => dest.CarName, opt => opt.MapFrom(src => src.Reservation != null && src.Reservation.Car != null 
@@ -56,7 +55,7 @@ namespace CarRentalSystem.Migrations;
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt != null ? src.CreatedAt.Value.ToString("yyyy-MM-dd HH:mm") : DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")));
             CreateMap<CreateReviewRequest, Review>();
 
-            // Car <-> DTO
+            
             CreateMap<Car, CarDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CarId))
                 .ForMember(dest => dest.Make, opt => opt.MapFrom(src => src.Brand != null ? src.Brand.BrandName : "Unknown"))
@@ -75,7 +74,7 @@ namespace CarRentalSystem.Migrations;
                 }.Where(s => !string.IsNullOrEmpty(s)).ToList()));
             CreateMap<CreateCarRequest, Car>();
 
-            // User <-> DTO
+            
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role != null ? src.Role.RoleName : "Customer"))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive ?? true));

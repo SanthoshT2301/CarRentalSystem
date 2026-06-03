@@ -4,30 +4,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarRentalSystem.Service.Admin;
+
 public class AdminService : IAdminService
 {
-    private readonly AppDbContext _appDbContext;
-    public AdminService(AppDbContext appDbContext)
-    {
-        _appDbContext = appDbContext;
-    }
+    private readonly AppDbContext _context;
+
+    public AdminService(AppDbContext context) => _context = context;
 
     public async Task<ActionResult<AdminStats>> GetAdminStatsAsync()
     {
-            int usersCount = await _appDbContext.Users.CountAsync();
-            int carsCount = await _appDbContext.Cars.CountAsync();
-            int bookingsCount = await _appDbContext.Reservations.CountAsync();
+        var usersCount = await _context.Users.CountAsync();
+        var carsCount = await _context.Cars.CountAsync();
+        var bookingsCount = await _context.Reservations.CountAsync();
+        var totalRevenue = await _context.Payments
+            .Where(p => p.PaymentStatusId == 1)
+            .SumAsync(p => p.Amount ?? 0m);
 
-            decimal totalRevenue = await _appDbContext.Payments
-                .Where(p => p.PaymentStatusId == 1)
-                .SumAsync(p => p.Amount ?? 0.00m);
-
-            return new AdminStats
-            {
-                UsersCount = usersCount,
-                CarsCount = carsCount,
-                BookingsCount = bookingsCount,
-                Revenue = totalRevenue
-            };
+        return new AdminStats
+        {
+            UsersCount = usersCount,
+            CarsCount = carsCount,
+            BookingsCount = bookingsCount,
+            Revenue = totalRevenue
+        };
     }
 }

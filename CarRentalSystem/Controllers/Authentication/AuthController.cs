@@ -6,32 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CarRentalSystem.Controller.Authentication;
 
-[Route("api/[controller]/[action]")]
+[Route("api/[controller]")]
 [ApiController]
-
+[AllowAnonymous] // Login and register must always be publicly accessible
 public class AuthenticationController : ControllerBase
 {
-    private readonly IAuthentication _authenticationService;
+    private readonly IAuthentication _authService;
 
-    public AuthenticationController(IAuthentication authenticationService)
-    {
-        _authenticationService = authenticationService;
-    }
+    public AuthenticationController(IAuthentication authService) => _authService = authService;
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var res= await _authenticationService.Register(request);
-        if(res is OkObjectResult)
-        {
-            return Ok(res);
-        }
-        return BadRequest();
+        var result = await _authService.Register(request);
+        return result is OkObjectResult ? result : BadRequest(result);
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
-    {
-        return await _authenticationService.Login(request);
-    }
+        => await _authService.Login(request);
 }

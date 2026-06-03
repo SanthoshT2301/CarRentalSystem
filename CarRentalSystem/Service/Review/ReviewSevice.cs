@@ -1,5 +1,7 @@
+using AutoMapper;
 using CarRentalSystem.DATA;
 using CarRentalSystem.DTO.Review;
+using CarRentalSystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,145 +9,100 @@ namespace CarRentalSystem.Service.Review;
 
 public class ReviewService : IReviewService
 {
-    private readonly AppDbContext _appDbContext;
-    public ReviewService(AppDbContext appDbContext)
+    private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
+
+    public ReviewService(AppDbContext context, IMapper mapper)
     {
-        _appDbContext = appDbContext;
+        _context = context;
+        _mapper = mapper;
     }
 
-    public async Task<ActionResult<ReviewDto>> AddReviewAsync(int userID, CreateReviewRequest request)
+    // ── ADD REVIEW ────────────────────────────────────────────────────────────
+    public async Task<ActionResult<ReviewDto>> AddReviewAsync(int userId, CreateReviewRequest request)
     {
-        var reservation = await _appDbContext.Reservations
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return new NotFoundObjectResult("User not found.");
+
+        var reservation = await _context.Reservations
             .Include(r => r.Car)
+            .ThenInclude(c => c!.Brand)
             .FirstOrDefaultAsync(r => r.ReservationId == request.ReservationId);
-        var user = await _appDbContext.Users.FindAsync(userID);
 
-        if (user == null)
-        {
-            return new NotFoundObjectResult("User not found");
-        }
-        if (reservation==null)
-        {
-            return new NotFoundObjectResult("Reservation not found");
-        }
-        if(reservation.UserId!=userID)
-        {
-            return new BadRequestObjectResult("You cannot review your own reservation");
-        }
-        if(reservation.ReservationStatusId!=2)
-        {
-            return new BadRequestObjectResult("You can only review a car after completed");
-        }
-        var existingReview=await _appDbContext.Reviews.FirstOrDefaultAsync(r=>r.ReservationId==request.ReservationId);
-        if(existingReview!=null)
-        {
-            return new BadRequestObjectResult("You have already reviewed this reservation");
-        }
-        var review=new CarRentalSystem.Models.Review
-        {
-            UserId=userID,
-            ReservationId=request.ReservationId,
-            Rating=request.Rating,
-            Comment=request.Comment,
-            CreatedAt=DateTime.UtcNow
-        };
-        _appDbContext.Reviews.Add(review);
-        await _appDbContext.SaveChangesAsync();
-        
-        return new ReviewDto
-        {
-            ReviewId=review.ReviewId,
-            UserId=userID,
-            ReservationId=review.ReservationId,
-            CarId=reservation.CarId,
-            CarName=reservation.Car.Model,
-            UserName=user.FirstName+" "+user.LastName,
-            Rating=review.Rating,
-            Comment=review.Comment,
-            CreatedAt=review.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty
-        };
+        if (reservation == null) return new NotFoundObjectResult("Reservation not found.");
+
+        if (reservation.UserId != userId)
+            return new BadRequestObjectResult("You can only review your own reservations.");
+
+        if (reservation.ReservationStatusId != 2)
+            return new BadRequestObjectResult("You can only review a car after the rental is completed.");
+
+        var existing = await _context.Reviews.AnyAsync(r => r.ReservationId == request.ReservationId);
+        if (existing)
+            return new BadRequestObjectResult("You have already reviewed this reservation.");
+
+        var review = _mapper.Map<Models.Review>(request);
+        review.UserId = userId;
+        review.CreatedAt = DateTime.UtcNow;
+
+        _context.Reviews.Add(review);
+        await _context.SaveChangesAsync();
+
+        // Reload with navigations for accurate mapping
+        var loaded = await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Reservation)
+            .ThenInclude(res => res!.Car)
+            .ThenInclude(c => c!.Brand)
+            .FirstAsync(r => r.ReviewId == review.ReviewId);
+
+        return _mapper.Map<ReviewDto>(loaded);
     }
 
+    // ── GET REVIEWS FOR CAR ───────────────────────────────────────────────────
+    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetCarReviewsAsync(int carId)
+    {
+        var carExists = await _context.Cars.AnyAsync(c => c.CarId == carId);
+        if (!carExists) return new NotFoundObjectResult("Car not found.");
+
+        var reviews = await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Reservation)
+            .ThenInclude(res => res!.Car)
+            .ThenInclude(c => c!.Brand)
+            .Where(r => r.Reservation != null && r.Reservation.CarId == carId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        return _mapper.Map<List<ReviewDto>>(reviews);
+    }
+
+    // ── GET ALL REVIEWS ───────────────────────────────────────────────────────
     public async Task<ActionResult<IEnumerable<ReviewDto>>> GetAllReviewsAsync()
     {
-        var reviews=await _appDbContext.Reviews
-        .Include(r=>r.User)
-        .Include(r=>r.Reservation)
-        .Include(r=>r.Reservation.Car)
-        .OrderByDescending(r=>r.CreatedAt)
-        .ToListAsync();
-        var reviewsdto=new List<ReviewDto>();
-        foreach(var review in reviews)
-        {
-            reviewsdto.Add(new ReviewDto
-            {
-            ReviewId=review.ReviewId,
-            UserId=review.UserId,
-            ReservationId=review.ReservationId,
-            CarId=review.Reservation.CarId,
-            CarName=review.Reservation.Car.Model,
-            Rating=review.Rating,
-            Comment=review.Comment,
-            CreatedAt=review.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty
-            });
-        }
-        return reviewsdto;
+        var reviews = await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Reservation)
+            .ThenInclude(res => res!.Car)
+            .ThenInclude(c => c!.Brand)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        return _mapper.Map<List<ReviewDto>>(reviews);
     }
 
-    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetCarReviewsAsync(int carId)
-{
-    var car = await _appDbContext.Cars
-        .Include(c => c.Brand)
-        .FirstOrDefaultAsync(c => c.CarId == carId);
+    // ── REVIEW COUNT ──────────────────────────────────────────────────────────
+    public async Task<ActionResult<int>> GetReviewCountForCarAsync(int carId) =>
+        await _context.Reviews.CountAsync(r => r.Reservation != null && r.Reservation.CarId == carId);
 
-    if (car == null)
-    {
-        return new NotFoundObjectResult("Car not found");
-    }
-
-    var reviews = await _appDbContext.Reviews
-        .Include(r => r.User)
-        .Include(r => r.Reservation)
-        .ThenInclude(res => res.Car)
-        .Where(r => r.Reservation != null && r.Reservation.CarId == carId)
-        .OrderByDescending(r => r.CreatedAt)
-        .ToListAsync();
-
-    var reviewsdto = reviews.Select(review => new ReviewDto
-    {
-        ReviewId = review.ReviewId,
-        UserId = review.UserId,
-        ReservationId = review.ReservationId,
-        CarId = carId,
-        CarName = review.Reservation?.Car?.Model ?? "",
-        UserName = review.User != null
-            ? $"{review.User.FirstName} {review.User.LastName}"
-            : "Unknown User",
-        Rating = review.Rating,
-        Comment = review.Comment,
-        CreatedAt = review.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty
-    }).ToList();
-
-    return reviewsdto;
-}
-
-    public async Task<ActionResult<int>> GetReviewCountForCarAsync(int carId)
-    {
-        return await _appDbContext.Reviews
-                .CountAsync(r => r.Reservation != null && r.Reservation.CarId == carId);
-    }
+    // ── AVERAGE RATING ────────────────────────────────────────────────────────
     public async Task<ActionResult<double>> GetAverageRatingForCarAsync(int carId)
     {
-        var ratings = await _appDbContext.Reviews
-                .Where(r => r.Reservation != null && r.Reservation.CarId == carId && r.Rating != null)
-                .Select(r => r.Rating.Value)
-                .ToListAsync();
+        var ratings = await _context.Reviews
+            .Where(r => r.Reservation != null && r.Reservation.CarId == carId && r.Rating != null)
+            .Select(r => r.Rating!.Value)
+            .ToListAsync();
 
-            if (!ratings.Any())
-            {
-                return 4.8;
-            }
-
-            return Math.Round(ratings.Average(), 1);
+        return ratings.Any() ? Math.Round(ratings.Average(), 1) : 4.8;
     }
 }

@@ -1,11 +1,12 @@
 using CarRentalSystem.DTO.Cars;
+using CarRentalSystem.DTO.Common;
 using CarRentalSystem.Service.Car;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CarRentalSystem.Controller.Cars;
+namespace CarRentalSystem.Controllers.v1;
 
-[Route("api/[controller]")]
+[Route("api/v1/cars")]
 [ApiController]
 public class CarController : ControllerBase
 {
@@ -13,16 +14,18 @@ public class CarController : ControllerBase
 
     public CarController(ICarService carService) => _carService = carService;
 
-    // Public — anyone can browse available cars
+    /// <summary>Browse all cars — paginated. ?page=1&amp;pageSize=10</summary>
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<CarDto>>> GetAllCars()
+    public async Task<ActionResult<PagedResult<CarDto>>> GetAllCars(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var cars = await _carService.GetAllCars();
-        return cars.Value is not null ? Ok(cars.Value) : NotFound(new { error = "No cars found." });
+        var result = await _carService.GetAllCars(page, pageSize);
+        return Ok(result);
     }
 
-    // Public — anyone can view a single car
+    /// <summary>Get a single car by ID.</summary>
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<ActionResult<CarDto>> GetCarById(int id)
@@ -31,10 +34,10 @@ public class CarController : ControllerBase
         return car.Value is not null ? Ok(car.Value) : NotFound(new { error = $"Car {id} not found." });
     }
 
-    // Admin only — add a new car to the fleet
+    /// <summary>Admin only — add a new car to the fleet.</summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<CarDto>> CreateCarAsync([FromBody] CreateCarRequest request)
+    public async Task<ActionResult<CarDto>> CreateCar([FromBody] CreateCarRequest request)
     {
         var car = await _carService.CreateCarAsync(request);
         return car.Value is not null
@@ -42,10 +45,10 @@ public class CarController : ControllerBase
             : BadRequest(new { error = "Failed to create car." });
     }
 
-    // Admin only — remove a car from the fleet
+    /// <summary>Admin only — remove a car from the fleet.</summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<bool>> DeleteCarAsync(int id)
+    public async Task<IActionResult> DeleteCar(int id)
     {
         var result = await _carService.DeleteCarAsync(id);
         if (result.Result is NotFoundObjectResult notFound) return notFound;

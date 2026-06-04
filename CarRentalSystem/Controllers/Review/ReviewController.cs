@@ -1,11 +1,12 @@
+using CarRentalSystem.DTO.Common;
 using CarRentalSystem.DTO.Review;
 using CarRentalSystem.Service.Review;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CarRentalSystem.Controller.Review;
+namespace CarRentalSystem.Controllers.v1;
 
-[Route("api/[controller]")]
+[Route("api/v1/reviews")]
 [ApiController]
 public class ReviewController : ControllerBase
 {
@@ -13,32 +14,35 @@ public class ReviewController : ControllerBase
 
     public ReviewController(IReviewService reviewService) => _reviewService = reviewService;
 
-    // Public — anyone can read reviews
+    /// <summary>Public — all reviews paginated.</summary>
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetAllReviews()
+    public async Task<ActionResult<PagedResult<ReviewDto>>> GetAllReviews(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var reviews = await _reviewService.GetAllReviewsAsync();
-        var list = reviews.Value?.ToList();
-        return list is { Count: > 0 } ? Ok(list) : NotFound(new { error = "No reviews found." });
+        var result = await _reviewService.GetAllReviewsAsync(page, pageSize);
+        return Ok(result);
     }
 
-    // Public — reviews for a specific car
+    /// <summary>Public — reviews for a specific car paginated.</summary>
     [HttpGet("car/{carId}")]
     [AllowAnonymous]
-    public async Task<ActionResult<IEnumerable<ReviewDto>>> GetCarReviews(int carId)
+    public async Task<ActionResult<PagedResult<ReviewDto>>> GetCarReviews(
+        int carId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var reviews = await _reviewService.GetCarReviewsAsync(carId);
-        if (reviews.Result is NotFoundObjectResult notFound) return notFound;
-        var list = reviews.Value?.ToList();
-        return list is { Count: > 0 } ? Ok(list) : NotFound(new { error = "No reviews for this car." });
+        var result = await _reviewService.GetCarReviewsAsync(carId, page, pageSize);
+        return Ok(result);
     }
 
-    // Customer only — only a customer who completed a booking can review
+    /// <summary>Customer only — submit a review for a completed rental.</summary>
     [HttpPost]
     [Authorize(Roles = "Customer")]
-    public async Task<ActionResult<ReviewDto>> AddReview([FromQuery] int userId,
-                                                          [FromBody] CreateReviewRequest request)
+    public async Task<ActionResult<ReviewDto>> AddReview(
+        [FromQuery] int userId,
+        [FromBody] CreateReviewRequest request)
     {
         var review = await _reviewService.AddReviewAsync(userId, request);
         if (review.Result is NotFoundObjectResult notFound) return notFound;

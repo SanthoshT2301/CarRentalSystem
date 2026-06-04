@@ -1,6 +1,8 @@
 using AutoMapper;
 using CarRentalSystem.DATA;
 using CarRentalSystem.DTO.Cars;
+using CarRentalSystem.DTO.Common;
+using CarRentalSystem.Extensions;
 using CarRentalSystem.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,77 +20,62 @@ public class CarService : ICarService
         _mapper = mapper;
     }
 
-    // ── GET ALL ──────────────────────────────────────────────────────────────
-    public async Task<ActionResult<IEnumerable<CarDto>>> GetAllCars()
+    // GET ALL (paginated)
+    public async Task<PagedResult<CarDto>> GetAllCars(int page, int pageSize)
     {
-        var cars = await _context.Cars
+        var query = _context.Cars
             .Include(c => c.Brand)
             .Include(c => c.Category)
             .Include(c => c.FuelType)
             .Include(c => c.CarStatus)
             .Include(c => c.Location)
             .Include(c => c.CarImages)
+            .OrderBy(c => c.CarId)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var cars = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return _mapper.Map<List<CarDto>>(cars);
+        return new PagedResult<CarDto>
+        {
+            Data = _mapper.Map<List<CarDto>>(cars),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
-    // ── GET BY ID ─────────────────────────────────────────────────────────────
     public async Task<ActionResult<CarDto>> GetCarById(int id)
     {
         var car = await _context.Cars
-            .Include(c => c.Brand)
-            .Include(c => c.Category)
-            .Include(c => c.FuelType)
-            .Include(c => c.CarStatus)
-            .Include(c => c.Location)
-            .Include(c => c.CarImages)
+            .Include(c => c.Brand).Include(c => c.Category).Include(c => c.FuelType)
+            .Include(c => c.CarStatus).Include(c => c.Location).Include(c => c.CarImages)
             .FirstOrDefaultAsync(c => c.CarId == id);
-
         if (car == null) return new NotFoundObjectResult($"Car with id {id} not found.");
-
         return _mapper.Map<CarDto>(car);
     }
 
-    // ── CREATE ────────────────────────────────────────────────────────────────
     public async Task<ActionResult<CarDto>> CreateCarAsync(CreateCarRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Make) || string.IsNullOrWhiteSpace(request.Model))
             throw new ArgumentException("Make and Model are required.");
 
-        // Resolve or create Brand
-        var brand = await _context.CarBrands
-            .FirstOrDefaultAsync(b => b.BrandName.ToLower() == request.Make.ToLower())
-            ?? await CreateAndSaveAsync(_context.CarBrands, new CarBrand
-            {
-                BrandName = request.Make,
-                LogoUrl = request.Image,
-                IsActive = true
-            });
+        var brand = await _context.CarBrands.FirstOrDefaultAsync(b => b.BrandName.ToLower() == request.Make.ToLower())
+            ?? await CreateAndSaveAsync(_context.CarBrands, new CarBrand { BrandName = request.Make, LogoUrl = request.Image, IsActive = true });
 
-        // Resolve or create Category
-        var category = await _context.CarCategories
-            .FirstOrDefaultAsync(c => c.CategoryName.ToLower() == request.Type.ToLower())
-            ?? await CreateAndSaveAsync(_context.CarCategories, new CarCategory
-            {
-                CategoryName = request.Type
-            });
+        var category = await _context.CarCategories.FirstOrDefaultAsync(c => c.CategoryName.ToLower() == request.Type.ToLower())
+            ?? await CreateAndSaveAsync(_context.CarCategories, new CarCategory { CategoryName = request.Type });
 
-        // Resolve or create Location
-        var location = await _context.Locations
-            .FirstOrDefaultAsync(l => l.LocationName.ToLower() == request.Location.ToLower())
-            ?? await CreateAndSaveAsync(_context.Locations, new Location
-            {
-                LocationName = request.Location
-            });
+        var location = await _context.Locations.FirstOrDefaultAsync(l => l.LocationName.ToLower() == request.Location.ToLower())
+            ?? await CreateAndSaveAsync(_context.Locations, new Location { LocationName = request.Location });
 
-        // Resolve FuelType from features list
         var fuelTypeName = ResolveFuelType(request.Features);
-        var fuelType = await _context.FuelTypes
-            .FirstOrDefaultAsync(f => f.FuelTypeName.ToLower() == fuelTypeName.ToLower())
+        var fuelType = await _context.FuelTypes.FirstOrDefaultAsync(f => f.FuelTypeName.ToLower() == fuelTypeName.ToLower())
             ?? await CreateAndSaveAsync(_context.FuelTypes, new FuelType { FuelTypeName = fuelTypeName });
 
-        // Resolve or create CarStatus "Available"
         var status = await _context.CarStatuses.FirstOrDefaultAsync(s => s.StatusName == "Available")
             ?? await CreateAndSaveAsync(_context.CarStatuses, new CarStatus { StatusName = "Available" });
 
@@ -106,50 +93,34 @@ public class CarService : ICarService
             Mileage = request.Mileage,
             Color = request.Color.Trim(),
             NoSeats = request.NoSeats > 0 ? request.NoSeats : 5,
-            Address = string.IsNullOrWhiteSpace(request.Address)
-                            ? $"123 Rental Blvd, {location.LocationName}"
-                            : request.Address.Trim(),
+            Address = string.IsNullOrWhiteSpace(request.Address) ? $"123 Rental Blvd, {location.LocationName}" : request.Address.Trim(),
             CreatedAt = DateTime.UtcNow
         };
-
         _context.Cars.Add(car);
         await _context.SaveChangesAsync();
-
         _context.CarImages.Add(new CarImage { CarId = car.CarId, ImageUrl = request.Image });
         await _context.SaveChangesAsync();
 
-        // Reload with all navigations for accurate mapping
         var loaded = await _context.Cars
-            .Include(c => c.Brand)
-            .Include(c => c.Category)
-            .Include(c => c.FuelType)
-            .Include(c => c.CarStatus)
-            .Include(c => c.Location)
-            .Include(c => c.CarImages)
+            .Include(c => c.Brand).Include(c => c.Category).Include(c => c.FuelType)
+            .Include(c => c.CarStatus).Include(c => c.Location).Include(c => c.CarImages)
             .FirstAsync(c => c.CarId == car.CarId);
-
         return _mapper.Map<CarDto>(loaded);
     }
 
-    // ── DELETE ────────────────────────────────────────────────────────────────
     public async Task<ActionResult<bool>> DeleteCarAsync(int id)
     {
         var car = await _context.Cars.Include(c => c.CarImages).FirstOrDefaultAsync(c => c.CarId == id);
         if (car == null) return new NotFoundObjectResult($"Car with id {id} not found.");
-
         _context.CarImages.RemoveRange(car.CarImages);
         _context.Cars.Remove(car);
         await _context.SaveChangesAsync();
         return true;
     }
 
-    // ── HELPERS ───────────────────────────────────────────────────────────────
-    private async Task<T> CreateAndSaveAsync<T>(Microsoft.EntityFrameworkCore.DbSet<T> dbSet, T entity)
-        where T : class
+    private async Task<T> CreateAndSaveAsync<T>(Microsoft.EntityFrameworkCore.DbSet<T> dbSet, T entity) where T : class
     {
-        dbSet.Add(entity);
-        await _context.SaveChangesAsync();
-        return entity;
+        dbSet.Add(entity); await _context.SaveChangesAsync(); return entity;
     }
 
     private static string ResolveFuelType(List<string> features)

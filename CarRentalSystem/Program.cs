@@ -7,6 +7,7 @@ using CarRentalSystem.Service.Car;
 using CarRentalSystem.Service.Logistics;
 using CarRentalSystem.Service.Maintenances;
 using CarRentalSystem.Service.Promotions;
+using CarRentalSystem.Service.Reports;
 using CarRentalSystem.Service.Reservation;
 using CarRentalSystem.Service.Review;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,68 +17,60 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-    builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-
-builder.Services.AddScoped<ICarService,CarService>();
-builder.Services.AddScoped<IReservationService,ReservationService>();
-builder.Services.AddScoped<IReviewService,ReviewService>();
-builder.Services.AddScoped<IAdminService,AdminService>();
-builder.Services.AddScoped<IAuthentication,AuthenticationService>();
-builder.Services.AddScoped<IPromotionService,PromotionService>();
-builder.Services.AddScoped<IMaintenanceService,MaintenanceService>();
-builder.Services.AddScoped<IGateLogisticsService,GateLogisticsService>();
-
+builder.Services.AddScoped<ICarService, CarService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAuthentication, AuthenticationService>();
+builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
+builder.Services.AddScoped<IGateLogisticsService, GateLogisticsService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secret      = jwtSettings.GetValue<string>("Secret")
-                  ?? throw new InvalidOperationException("JWT Secret is not configured.");
+var secret = jwtSettings.GetValue<string>("Secret")
+             ?? throw new InvalidOperationException("JWT Secret is not configured.");
 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer           = true,
-        ValidateAudience         = true,
-        ValidateLifetime         = true,
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer              = jwtSettings.GetValue<string>("Issuer"),
-        ValidAudience            = jwtSettings.GetValue<string>("Audience"),
-        IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        ValidIssuer = jwtSettings.GetValue<string>("Issuer"),
+        ValidAudience = jwtSettings.GetValue<string>("Audience"),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
     };
 });
 
 builder.Services.AddAuthorization();
-
-
 builder.Services.AddControllers();
-
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "CarRentalSystem API", Version = "v1" });
-
-  
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "bearer",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
         BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
-        Description  = "Enter your JWT token. Example: eyJhbGci..."
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token."
     });
-
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -90,31 +83,22 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 var app = builder.Build();
-
 
 app.UseGlobalExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "CarRentalSystem v1");
-        options.RoutePrefix = string.Empty; 
+        options.RoutePrefix = string.Empty;
     });
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

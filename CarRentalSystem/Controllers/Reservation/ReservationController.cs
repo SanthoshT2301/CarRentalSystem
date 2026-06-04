@@ -1,13 +1,14 @@
+using CarRentalSystem.DTO.Common;
 using CarRentalSystem.DTO.Reservation;
 using CarRentalSystem.Service.Reservation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CarRentalSystem.Controller.Reservation;
+namespace CarRentalSystem.Controllers.v1;
 
-[Route("api/[controller]")]
+[Route("api/v1/reservations")]
 [ApiController]
-[Authorize] // All reservation endpoints require a logged-in user at minimum
+[Authorize]
 public class ReservationController : ControllerBase
 {
     private readonly IReservationService _reservationService;
@@ -15,21 +16,35 @@ public class ReservationController : ControllerBase
     public ReservationController(IReservationService reservationService)
         => _reservationService = reservationService;
 
-    // Customer / Admin — view own bookings
+    /// <summary>Customer / Admin — view own bookings (paginated).</summary>
     [HttpGet("my")]
     [Authorize(Roles = "Customer,Admin")]
-    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMyBookings([FromQuery] int userId)
+    public async Task<ActionResult<PagedResult<ReservationDto>>> GetMyBookings(
+        [FromQuery] int userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var reservations = await _reservationService.GetMyBookings(userId);
-        var list = reservations.Value?.ToList();
-        return list is { Count: > 0 } ? Ok(list) : NotFound(new { error = "No reservations found." });
+        var result = await _reservationService.GetMyBookings(userId, page, pageSize);
+        return Ok(result);
     }
 
-    // Customer / Admin — create a booking
+    /// <summary>Admin only — view all bookings (paginated).</summary>
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<PagedResult<ReservationDto>>> GetAllBookings(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _reservationService.GetAllBookingsAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>Customer / Admin — create a booking.</summary>
     [HttpPost]
     [Authorize(Roles = "Customer,Admin")]
-    public async Task<ActionResult<ReservationDto>> CreateBooking([FromQuery] int userId,
-                                                                   [FromBody] CreateReservationRequest request)
+    public async Task<ActionResult<ReservationDto>> CreateBooking(
+        [FromQuery] int userId,
+        [FromBody] CreateReservationRequest request)
     {
         var result = await _reservationService.CreateBooking(userId, request);
         if (result.Result is NotFoundObjectResult notFound) return notFound;
@@ -37,33 +52,29 @@ public class ReservationController : ControllerBase
         return CreatedAtAction(nameof(GetMyBookings), new { userId }, result.Value);
     }
 
-    // Customer / Admin — cancel own booking; Admin can cancel any
+    /// <summary>Customer / Admin — cancel a booking.</summary>
     [HttpDelete("{id}/cancel")]
     [Authorize(Roles = "Customer,Admin")]
-    public async Task<IActionResult> CancelBooking(int id, [FromQuery] int userId, [FromQuery] bool isAdmin = false)
+    public async Task<IActionResult> CancelBooking(
+        int id,
+        [FromQuery] int userId,
+        [FromQuery] bool isAdmin = false)
     {
         var result = await _reservationService.CancelBooking(id, userId, isAdmin);
         if (result.Result is NotFoundObjectResult notFound) return notFound;
         return Ok(new { message = "Reservation cancelled successfully." });
     }
 
-    // Agent / Admin — mark vehicle as returned
+    /// <summary>Agent / Admin — mark vehicle as returned.</summary>
     [HttpPut("{id}/return")]
     [Authorize(Roles = "Agent,Admin")]
-    public async Task<IActionResult> ReturnCar(int id, [FromQuery] int userId, [FromQuery] bool isAdmin = false)
+    public async Task<IActionResult> ReturnCar(
+        int id,
+        [FromQuery] int userId,
+        [FromQuery] bool isAdmin = false)
     {
         var result = await _reservationService.ReturnCarAsync(id, userId, isAdmin);
         if (result.Result is NotFoundObjectResult notFound) return notFound;
-        return Ok(new { message = "Vehicle returned successfully. The customer may now leave a review." });
-    }
-
-    // Admin only — view all bookings across all users
-    [HttpGet("all")]
-    [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetAllBookings()
-    {
-        var reservations = await _reservationService.GetAllBookingsAsync();
-        var list = reservations.Value?.ToList();
-        return list is { Count: > 0 } ? Ok(list) : NotFound(new { error = "No reservations found." });
+        return Ok(new { message = "Vehicle returned successfully." });
     }
 }

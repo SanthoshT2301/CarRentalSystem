@@ -1,18 +1,17 @@
-using CarRentalSystem.DTO.Authentication;
+// ── Authentication ────────────────────────────────────────────────────────────
 using CarRentalSystem.DTO.Register;
 using CarRentalSystem.Service.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CarRentalSystem.Controller.Authentication;
+namespace CarRentalSystem.Controllers.v1;
 
-[Route("api/[controller]")]
+[Route("api/v1/authentication")]
 [ApiController]
-[AllowAnonymous] // Login and register must always be publicly accessible
+[AllowAnonymous]
 public class AuthenticationController : ControllerBase
 {
     private readonly IAuthentication _authService;
-
     public AuthenticationController(IAuthentication authService) => _authService = authService;
 
     [HttpPost("register")]

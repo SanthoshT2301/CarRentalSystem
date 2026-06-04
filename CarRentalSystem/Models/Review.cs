@@ -16,8 +16,14 @@ namespace CarRentalSystem.Models
 
         [StringLength(1000)]
         public string? Comment { get; set; }
-        public DateTime? CreatedAt { get; set; } 
+        public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public bool IsDisputed { get; set; } = false;
+
+        [StringLength(1000)]
+        public string? DisputeResolution { get; set; }
+
+        // Navigation Properties
         [ForeignKey("UserId")]
         public User? User { get; set; }
 

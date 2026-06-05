@@ -2,7 +2,7 @@
 {
     public class RevenueReportDto
     {
-        public string Period { get; set; } = string.Empty;   // "YYYY-MM"
+        public string Period { get; set; } = string.Empty;  
         public int TotalBookings { get; set; }
         public int CompletedRentals { get; set; }
         public int CancelledRentals { get; set; }

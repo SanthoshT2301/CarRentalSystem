@@ -28,7 +28,7 @@ namespace CarRentalSystem.DATA
         public DbSet<MaintenanceAlert> MaintenanceAlerts { get; set; }
         public DbSet<CheckoutDetails> CheckoutDetails { get; set; }
         public DbSet<CheckinDetails> CheckinDetails { get; set; }
-
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -89,6 +89,8 @@ namespace CarRentalSystem.DATA
 
             modelBuilder.Entity<CheckinDetails>().HasKey(cid => cid.CheckinDetailsId);
             modelBuilder.Entity<CheckinDetails>().Property(cid => cid.CheckinDetailsId).UseIdentityColumn();
+            modelBuilder.Entity<PasswordResetToken>().HasKey(p => p.Id);
+            modelBuilder.Entity<PasswordResetToken>().Property(p => p.Id).UseIdentityColumn();
 
             modelBuilder.Entity<Car>()
                 .Property(c => c.PricePerDay)

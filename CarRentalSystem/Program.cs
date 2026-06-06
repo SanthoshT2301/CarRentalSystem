@@ -31,7 +31,7 @@ builder.Services.AddScoped<IPromotionService, PromotionService>();
 builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IGateLogisticsService, GateLogisticsService>();
 builder.Services.AddScoped<IReportService, ReportService>();
-
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secret = jwtSettings.GetValue<string>("Secret")
              ?? throw new InvalidOperationException("JWT Secret is not configured.");

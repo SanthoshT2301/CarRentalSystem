@@ -12,8 +12,12 @@ namespace CarRentalSystem.Controllers.v1;
 public class AuthenticationController : ControllerBase
 {
     private readonly IAuthentication _authService;
-    public AuthenticationController(IAuthentication authService) => _authService = authService;
-
+    private readonly IPasswordResetService _passwordResetService;
+    public AuthenticationController(IAuthentication authService, IPasswordResetService passwordResetService)
+    {
+        _authService = authService;
+        _passwordResetService = passwordResetService;
+    }
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
@@ -24,4 +28,12 @@ public class AuthenticationController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
         => await _authService.Login(request);
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    => await _passwordResetService.ForgotPasswordAsync(request);
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        => await _passwordResetService.ResetPasswordAsync(request);
 }

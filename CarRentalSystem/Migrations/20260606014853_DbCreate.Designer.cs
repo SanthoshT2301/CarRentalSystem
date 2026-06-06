@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CarRentalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260602100804_CreateDb")]
-    partial class CreateDb
+    [Migration("20260606014853_DbCreate")]
+    partial class DbCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "8.0.18")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -824,6 +824,13 @@ namespace CarRentalSystem.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DisputeResolution")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDisputed")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("Rating")
                         .HasColumnType("int");
 
@@ -869,6 +876,11 @@ namespace CarRentalSystem.Migrations
                         {
                             RoleId = 2,
                             RoleName = "Customer"
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            RoleName = "Agent"
                         });
                 });
 

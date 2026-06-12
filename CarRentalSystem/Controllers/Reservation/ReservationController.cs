@@ -16,7 +16,6 @@ public class ReservationController : ControllerBase
     public ReservationController(IReservationService reservationService)
         => _reservationService = reservationService;
 
-    /// <summary>Customer / Admin — view own bookings (paginated).</summary>
     [HttpGet("my")]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<ActionResult<PagedResult<ReservationDto>>> GetMyBookings(
@@ -28,7 +27,7 @@ public class ReservationController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Admin only — view all bookings (paginated).</summary>
+ 
     [HttpGet("all")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PagedResult<ReservationDto>>> GetAllBookings(
@@ -39,7 +38,7 @@ public class ReservationController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Customer / Admin — create a booking.</summary>
+   
     [HttpPost]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<ActionResult<ReservationDto>> CreateBooking(
@@ -52,7 +51,7 @@ public class ReservationController : ControllerBase
         return CreatedAtAction(nameof(GetMyBookings), new { userId }, result.Value);
     }
 
-    /// <summary>Customer / Admin — cancel a booking.</summary>
+    
     [HttpDelete("{id}/cancel")]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<IActionResult> CancelBooking(
@@ -65,7 +64,7 @@ public class ReservationController : ControllerBase
         return Ok(new { message = "Reservation cancelled successfully." });
     }
 
-    /// <summary>Agent / Admin — mark vehicle as returned.</summary>
+    
     [HttpPut("{id}/return")]
     [Authorize(Roles = "Agent,Admin")]
     public async Task<IActionResult> ReturnCar(

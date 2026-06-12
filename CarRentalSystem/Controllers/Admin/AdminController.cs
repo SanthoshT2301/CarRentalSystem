@@ -20,7 +20,7 @@ public class AdminController : ControllerBase
         _reportService = reportService;
     }
 
-    // ── STATS ─────────────────────────────────────────────────────────────────
+ 
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
@@ -28,7 +28,6 @@ public class AdminController : ControllerBase
         return stats.Value is null ? NotFound(new { error = "Stats not found." }) : Ok(stats.Value);
     }
 
-    // ── REPORT — JSON previews ────────────────────────────────────────────────
     [HttpGet("reports/bookings")]
     public async Task<IActionResult> GetBookingReport([FromQuery] ReportFilterRequest filter)
     {
@@ -57,7 +56,7 @@ public class AdminController : ControllerBase
         return Ok(new { count = data.Count, data });
     }
 
-    // ── REPORT — CSV downloads ────────────────────────────────────────────────
+   
     [HttpGet("reports/bookings/download")]
     public async Task<IActionResult> DownloadBookingReport([FromQuery] ReportFilterRequest filter)
     {

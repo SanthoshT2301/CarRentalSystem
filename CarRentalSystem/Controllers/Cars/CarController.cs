@@ -14,7 +14,7 @@ public class CarController : ControllerBase
 
     public CarController(ICarService carService) => _carService = carService;
 
-    /// <summary>Browse all cars — paginated. ?page=1&amp;pageSize=10</summary>
+   
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<PagedResult<CarDto>>> GetAllCars(
@@ -25,7 +25,7 @@ public class CarController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Get a single car by ID.</summary>
+   
     [HttpGet("{id}")]
     [AllowAnonymous]
     public async Task<ActionResult<CarDto>> GetCarById(int id)
@@ -34,7 +34,7 @@ public class CarController : ControllerBase
         return car.Value is not null ? Ok(car.Value) : NotFound(new { error = $"Car {id} not found." });
     }
 
-    /// <summary>Admin only — add a new car to the fleet.</summary>
+    
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CarDto>> CreateCar([FromBody] CreateCarRequest request)
@@ -45,7 +45,6 @@ public class CarController : ControllerBase
             : BadRequest(new { error = "Failed to create car." });
     }
 
-    /// <summary>Admin only — remove a car from the fleet.</summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteCar(int id)

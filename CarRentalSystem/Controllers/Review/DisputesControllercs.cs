@@ -7,7 +7,7 @@ namespace CarRentalSystem.Controllers.Review
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")] // Review dispute moderations are restricted strictly to Administrators
+    [Authorize(Roles = "Admin")] 
     public class DisputesController : ControllerBase
     {
         private readonly IReviewDisputeServicecs _disputeService;

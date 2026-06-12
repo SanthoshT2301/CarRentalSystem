@@ -33,6 +33,10 @@ public class AuthenticationController : ControllerBase
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     => await _passwordResetService.ForgotPasswordAsync(request);
 
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
+        => await _passwordResetService.VerifyOtpAsync(request);
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         => await _passwordResetService.ResetPasswordAsync(request);

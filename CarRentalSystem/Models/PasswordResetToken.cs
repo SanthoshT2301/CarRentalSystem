@@ -13,8 +13,8 @@ namespace CarRentalSystem.Models
         public int UserId { get; set; }
 
         [Required]
-        [StringLength(256)]
-        public string Token { get; set; } = string.Empty;
+        [StringLength(10)]
+        public string Otp { get; set; } = string.Empty;
 
         public DateTime ExpiresAt { get; set; }
 

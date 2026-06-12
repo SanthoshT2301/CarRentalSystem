@@ -14,7 +14,7 @@ public class ReviewController : ControllerBase
 
     public ReviewController(IReviewService reviewService) => _reviewService = reviewService;
 
-    /// <summary>Public — all reviews paginated.</summary>
+  
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<PagedResult<ReviewDto>>> GetAllReviews(
@@ -25,7 +25,7 @@ public class ReviewController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Public — reviews for a specific car paginated.</summary>
+   
     [HttpGet("car/{carId}")]
     [AllowAnonymous]
     public async Task<ActionResult<PagedResult<ReviewDto>>> GetCarReviews(
@@ -37,7 +37,7 @@ public class ReviewController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Customer only — submit a review for a completed rental.</summary>
+    
     [HttpPost]
     [Authorize(Roles = "Customer")]
     public async Task<ActionResult<ReviewDto>> AddReview(

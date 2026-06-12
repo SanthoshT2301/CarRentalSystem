@@ -1,9 +1,9 @@
-using System.Text;
 using CarRentalSystem.DATA;
 using CarRentalSystem.Middleware;
 using CarRentalSystem.Service.Admin;
 using CarRentalSystem.Service.Authentication;
 using CarRentalSystem.Service.Car;
+using CarRentalSystem.Service.Email;
 using CarRentalSystem.Service.Logistics;
 using CarRentalSystem.Service.Maintenances;
 using CarRentalSystem.Service.Promotions;
@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,8 @@ builder.Services.AddScoped<IMaintenanceService, MaintenanceService>();
 builder.Services.AddScoped<IGateLogisticsService, GateLogisticsService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secret = jwtSettings.GetValue<string>("Secret")
              ?? throw new InvalidOperationException("JWT Secret is not configured.");

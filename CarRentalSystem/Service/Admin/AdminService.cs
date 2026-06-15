@@ -11,6 +11,7 @@ public class AdminService : IAdminService
 
     public AdminService(AppDbContext context) => _context = context;
 
+    // ── Stats ─────────────────────────────────────────────────────────────────
     public async Task<ActionResult<AdminStats>> GetAdminStatsAsync()
     {
         var usersCount = await _context.Users.CountAsync();
@@ -27,5 +28,63 @@ public class AdminService : IAdminService
             BookingsCount = bookingsCount,
             Revenue = totalRevenue
         };
+    }
+
+    // ── Pending approvals ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns Admin and Agent accounts that have not yet been approved.
+    /// RoleId 1 = Admin, RoleId 3 = Agent (Customer = 2 — auto-approved, excluded).
+    /// </summary>
+    public async Task<List<PendingUserDto>> GetPendingUsersAsync()
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .Where(u => !u.IsApproved && u.IsActive == true && (u.RoleId == 1 || u.RoleId == 3))
+            .OrderBy(u => u.CreatedAt)
+            .Select(u => new PendingUserDto
+            {
+                UserId = u.UserId,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Email = u.Email,
+                Phone = u.Phone,
+                Role = u.Role != null ? u.Role.RoleName : "Unknown",
+                CreatedAt = u.CreatedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<(bool success, string message)> ReviewUserApprovalAsync(int userId, bool approve)
+    {
+        var user = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+
+        if (user == null)
+            return (false, "User not found.");
+
+        // Only Admin/Agent accounts go through the approval flow
+        if (user.RoleId == 2) // Customer
+            return (false, "Customer accounts do not require approval.");
+
+        if (user.IsApproved)
+            return (false, "This account is already approved.");
+
+        if (approve)
+        {
+            user.IsApproved = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return (true, $"{user.Role?.RoleName ?? "User"} account for {user.Email} has been approved.");
+        }
+        else
+        {
+            // Rejection: deactivate the account so it cannot be re-submitted
+            user.IsActive = false;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return (true, $"Account for {user.Email} has been rejected and deactivated.");
+        }
     }
 }

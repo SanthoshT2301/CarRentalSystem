@@ -1,3 +1,4 @@
+using CarRentalSystem.DTO.Admin;
 using CarRentalSystem.DTO.Reports;
 using CarRentalSystem.Service.Admin;
 using CarRentalSystem.Service.Reports;
@@ -20,7 +21,7 @@ public class AdminController : ControllerBase
         _reportService = reportService;
     }
 
- 
+    // ── Dashboard stats ───────────────────────────────────────────────────────
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
@@ -28,6 +29,36 @@ public class AdminController : ControllerBase
         return stats.Value is null ? NotFound(new { error = "Stats not found." }) : Ok(stats.Value);
     }
 
+    // ── User approval ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET api/v1/admin/users/pending
+    /// Returns all Admin/Agent accounts awaiting approval.
+    /// </summary>
+    [HttpGet("users/pending")]
+    public async Task<IActionResult> GetPendingUsers()
+    {
+        var pending = await _adminService.GetPendingUsersAsync();
+        return Ok(new { count = pending.Count, data = pending });
+    }
+
+    /// <summary>
+    /// PUT api/v1/admin/users/{userId}/approve
+    /// Body: { "approve": true }  → approves the account
+    /// Body: { "approve": false } → rejects / deactivates the account
+    /// </summary>
+    [HttpPut("users/{userId}/approve")]
+    public async Task<IActionResult> ReviewUserApproval(int userId, [FromBody] ApproveUserRequest request)
+    {
+        var (success, message) = await _adminService.ReviewUserApprovalAsync(userId, request.Approve);
+
+        if (!success)
+            return BadRequest(new { error = message });
+
+        return Ok(new { message });
+    }
+
+    // ── Reports ───────────────────────────────────────────────────────────────
     [HttpGet("reports/bookings")]
     public async Task<IActionResult> GetBookingReport([FromQuery] ReportFilterRequest filter)
     {
@@ -56,36 +87,31 @@ public class AdminController : ControllerBase
         return Ok(new { count = data.Count, data });
     }
 
-   
     [HttpGet("reports/bookings/download")]
     public async Task<IActionResult> DownloadBookingReport([FromQuery] ReportFilterRequest filter)
     {
         var csv = await _reportService.ExportBookingReportCsvAsync(filter);
-        var fileName = $"booking-report-{DateTime.UtcNow:yyyy-MM-dd}.csv";
-        return File(csv, "text/csv", fileName);
+        return File(csv, "text/csv", $"booking-report-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
 
     [HttpGet("reports/revenue/download")]
     public async Task<IActionResult> DownloadRevenueReport([FromQuery] ReportFilterRequest filter)
     {
         var csv = await _reportService.ExportRevenueReportCsvAsync(filter);
-        var fileName = $"revenue-report-{DateTime.UtcNow:yyyy-MM-dd}.csv";
-        return File(csv, "text/csv", fileName);
+        return File(csv, "text/csv", $"revenue-report-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
 
     [HttpGet("reports/reviews/download")]
     public async Task<IActionResult> DownloadReviewReport([FromQuery] ReportFilterRequest filter)
     {
         var csv = await _reportService.ExportReviewReportCsvAsync(filter);
-        var fileName = $"review-report-{DateTime.UtcNow:yyyy-MM-dd}.csv";
-        return File(csv, "text/csv", fileName);
+        return File(csv, "text/csv", $"review-report-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
 
     [HttpGet("reports/performance/download")]
     public async Task<IActionResult> DownloadPerformanceReport([FromQuery] ReportFilterRequest filter)
     {
         var csv = await _reportService.ExportPerformanceReportCsvAsync(filter);
-        var fileName = $"performance-report-{DateTime.UtcNow:yyyy-MM-dd}.csv";
-        return File(csv, "text/csv", fileName);
+        return File(csv, "text/csv", $"performance-report-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
 }

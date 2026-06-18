@@ -19,19 +19,24 @@ namespace CarRentalSystem.Models
 
         [Required]
         public DateTime DropDate { get; set; }
+
         public decimal? TotalAmount { get; set; }
 
         [StringLength(255)]
         public string? Address { get; set; }
+
         public bool IsHourly { get; set; } = false;
         public int DurationHours { get; set; } = 0;
 
         [StringLength(50)]
         public string? PickupTime { get; set; }
+
+        public bool IsExtended { get; set; } = false;
+
         public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation Properties
+       
         [ForeignKey("UserId")]
         public User? User { get; set; }
 

@@ -1,4 +1,6 @@
 using CarRentalSystem.DTO.Check;
+using CarRentalSystem.DTO.Common;
+using CarRentalSystem.DTO.Reservation;
 using CarRentalSystem.Service.Logistics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +13,15 @@ namespace CarRentalSystem.Controllers.v1;
 public class GateLogisticsController : ControllerBase
 {
     private readonly IGateLogisticsService _gateLogisticsService;
-    public GateLogisticsController(IGateLogisticsService gateLogisticsService) => _gateLogisticsService = gateLogisticsService;
+
+    public GateLogisticsController(IGateLogisticsService gateLogisticsService)
+        => _gateLogisticsService = gateLogisticsService;
+
+    // ── Gate operations ───────────────────────────────────────────────────────
 
     [HttpPost("checkout/{reservationId}")]
-    public async Task<IActionResult> ChecklistCheckout(int reservationId, [FromBody] GateCheckoutRequest request)
+    public async Task<IActionResult> ChecklistCheckout(
+        int reservationId, [FromBody] GateCheckoutRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var checkout = await _gateLogisticsService.VerifyAndCheckoutAsync(reservationId, request);
@@ -22,7 +29,8 @@ public class GateLogisticsController : ControllerBase
     }
 
     [HttpPost("checkin/{reservationId}")]
-    public async Task<IActionResult> ChecklistCheckin(int reservationId, [FromBody] GateCheckinRequest request)
+    public async Task<IActionResult> ChecklistCheckin(
+        int reservationId, [FromBody] GateCheckinRequest request)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
         var checkin = await _gateLogisticsService.VerifyAndCheckinAsync(reservationId, request);
@@ -35,5 +43,21 @@ public class GateLogisticsController : ControllerBase
         var checkout = await _gateLogisticsService.GetCheckoutDetailsByReservationAsync(reservationId);
         var checkin = await _gateLogisticsService.GetCheckinDetailsByReservationAsync(reservationId);
         return Ok(new GateLogisticsLogsDto { Checkout = checkout, Checkin = checkin });
+    }
+
+    // ── Agent-scoped bookings ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns all reservations for cars added by the given agent.
+    /// Agents use this to see only the customers who booked their cars.
+    /// </summary>
+    [HttpGet("agent-bookings/{agentId}")]
+    public async Task<ActionResult<PagedResult<ReservationDto>>> GetAgentBookings(
+        int agentId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var result = await _gateLogisticsService.GetBookingsForAgentCarsAsync(agentId, page, pageSize);
+        return Ok(result);
     }
 }

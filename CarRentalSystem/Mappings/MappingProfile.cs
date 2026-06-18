@@ -47,14 +47,14 @@ namespace CarRentalSystem.Migrations;
              .ForMember(d => d.Reservation, o => o.Ignore());
 
 
-                    CreateMap<Reservation, ReservationDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ReservationId))
-                .ForMember(dest => dest.PickupLocation, opt => opt.MapFrom(src => src.PickupLocation != null ? src.PickupLocation.LocationName : "San Francisco"))
-                .ForMember(dest => dest.DropoffLocation, opt => opt.MapFrom(src => src.DropoffLocation != null ? src.DropoffLocation.LocationName : "San Francisco"))
-                .ForMember(dest => dest.PickupDate, opt => opt.MapFrom(src => src.PickupDate.ToString("yyyy-MM-dd")))
-                .ForMember(dest => dest.DropoffDate, opt => opt.MapFrom(src => src.DropDate.ToString("yyyy-MM-dd")))
-                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount ?? 0.00m))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ReservationStatus != null ? src.ReservationStatus.StatusName.ToLower() : "confirmed"));
+        CreateMap<Reservation, ReservationDto>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ReservationId))
+    .ForMember(dest => dest.PickupLocation, opt => opt.MapFrom(src => src.PickupLocation != null ? src.PickupLocation.LocationName : "San Francisco"))
+    .ForMember(dest => dest.DropoffLocation, opt => opt.MapFrom(src => src.DropoffLocation != null ? src.DropoffLocation.LocationName : "San Francisco"))
+    .ForMember(dest => dest.PickupDate, opt => opt.MapFrom(src => src.PickupDate.ToString("yyyy-MM-dd")))
+    .ForMember(dest => dest.DropoffDate, opt => opt.MapFrom(src => src.DropDate.ToString("yyyy-MM-dd")))
+    .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount ?? 0.00m))
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ReservationStatus != null ? src.ReservationStatus.StatusName.ToLower() : "confirmed"));
                         CreateMap<CreateReservationRequest, Reservation>()
                  .ForMember(d => d.ReservationId, o => o.Ignore())
                  .ForMember(d => d.UserId, o => o.Ignore())

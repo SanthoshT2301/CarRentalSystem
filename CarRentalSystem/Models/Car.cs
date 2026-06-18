@@ -15,6 +15,9 @@ namespace CarRentalSystem.Models
         public int CarStatusId { get; set; }
         public int LocationId { get; set; }
 
+        // Nullable: null = added by Admin, set = added by Agent
+        public int? AgentId { get; set; }
+
         [Required]
         [StringLength(100)]
         public string Model { get; set; } = string.Empty;
@@ -33,9 +36,8 @@ namespace CarRentalSystem.Models
 
         [StringLength(255)]
         public string? Address { get; set; }
-        public DateTime? CreatedAt { get; set; } 
+        public DateTime? CreatedAt { get; set; }
 
-    
         [ForeignKey("BrandId")]
         public CarBrand? Brand { get; set; }
 
@@ -50,6 +52,10 @@ namespace CarRentalSystem.Models
 
         [ForeignKey("LocationId")]
         public Location? Location { get; set; }
+
+        [ForeignKey("AgentId")]
+        public User? Agent { get; set; }
+
         public List<CarImage> CarImages { get; set; } = new();
     }
 }

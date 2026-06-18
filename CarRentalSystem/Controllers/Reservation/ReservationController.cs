@@ -16,6 +16,7 @@ public class ReservationController : ControllerBase
     public ReservationController(IReservationService reservationService)
         => _reservationService = reservationService;
 
+
     [HttpGet("my")]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<ActionResult<PagedResult<ReservationDto>>> GetMyBookings(
@@ -27,7 +28,7 @@ public class ReservationController : ControllerBase
         return Ok(result);
     }
 
- 
+
     [HttpGet("all")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PagedResult<ReservationDto>>> GetAllBookings(
@@ -38,7 +39,7 @@ public class ReservationController : ControllerBase
         return Ok(result);
     }
 
-   
+
     [HttpPost]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<ActionResult<ReservationDto>> CreateBooking(
@@ -51,7 +52,26 @@ public class ReservationController : ControllerBase
         return CreatedAtAction(nameof(GetMyBookings), new { userId }, result.Value);
     }
 
-    
+
+    [HttpPut("{id}/extend")]
+    [Authorize(Roles = "Customer")]
+    public async Task<ActionResult<ExtendReservationDto>> ExtendReservation(
+        int id,
+        [FromQuery] int userId,
+        [FromBody] ExtendReservationRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.NewDropoffDate))
+            return BadRequest(new { message = "NewDropoffDate is required." });
+
+        var result = await _reservationService.ExtendReservationAsync(id, userId, request);
+
+        if (result.Result is NotFoundObjectResult notFound) return notFound;
+        if (result.Result is BadRequestObjectResult bad) return bad;
+
+        return Ok(result.Value);
+    }
+
+
     [HttpDelete("{id}/cancel")]
     [Authorize(Roles = "Customer,Admin")]
     public async Task<IActionResult> CancelBooking(
@@ -64,7 +84,7 @@ public class ReservationController : ControllerBase
         return Ok(new { message = "Reservation cancelled successfully." });
     }
 
-    
+
     [HttpPut("{id}/return")]
     [Authorize(Roles = "Agent,Admin")]
     public async Task<IActionResult> ReturnCar(

@@ -103,6 +103,11 @@ namespace CarRentalSystem.DATA
             modelBuilder.Entity<Reservation>()
                 .Property(r => r.TotalAmount)
                 .HasPrecision(18, 2);
+            modelBuilder.Entity<Car>()
+    .HasOne(c => c.Agent)
+    .WithMany()
+    .HasForeignKey(c => c.AgentId)
+    .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Role>().HasData(
     new Role { RoleId = 1, RoleName = "Admin" },

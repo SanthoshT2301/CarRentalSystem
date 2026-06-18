@@ -54,7 +54,8 @@ namespace CarRentalSystem.Migrations;
     .ForMember(dest => dest.PickupDate, opt => opt.MapFrom(src => src.PickupDate.ToString("yyyy-MM-dd")))
     .ForMember(dest => dest.DropoffDate, opt => opt.MapFrom(src => src.DropDate.ToString("yyyy-MM-dd")))
     .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.TotalAmount ?? 0.00m))
-    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ReservationStatus != null ? src.ReservationStatus.StatusName.ToLower() : "confirmed"));
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ReservationStatus != null ? src.ReservationStatus.StatusName.ToLower() : "confirmed"))
+    .ForMember(dest => dest.IsExtended, opt => opt.MapFrom(src => src.IsExtended));
                         CreateMap<CreateReservationRequest, Reservation>()
                  .ForMember(d => d.ReservationId, o => o.Ignore())
                  .ForMember(d => d.UserId, o => o.Ignore())

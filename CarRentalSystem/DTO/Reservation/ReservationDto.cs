@@ -14,4 +14,5 @@
         public bool IsHourly { get; set; }
         public int DurationHours { get; set; }
         public string? PickupTime { get; set; }
-    }
+    public bool IsExtended { get; set; }
+}

@@ -120,10 +120,11 @@ public class ReservationService : IReservationService
     }
 
     // ── EXTEND (one-time, daily only) ─────────────────────────────────────────
+   
+
     public async Task<ActionResult<ExtendReservationDto>> ExtendReservationAsync(
         int reservationId, int userId, ExtendReservationRequest request)
     {
-        // 1. Load reservation with car
         var res = await _context.Reservations
             .Include(r => r.Car)
             .FirstOrDefaultAsync(r => r.ReservationId == reservationId);
@@ -131,62 +132,98 @@ public class ReservationService : IReservationService
         if (res == null)
             return new NotFoundObjectResult("Reservation not found.");
 
-        // 2. Ownership check
         if (res.UserId != userId)
             return new BadRequestObjectResult("You can only extend your own reservations.");
 
-        // 3. Must be Confirmed (StatusId = 1)
         if (res.ReservationStatusId != 1)
-            return new BadRequestObjectResult(
-                "Only confirmed reservations can be extended.");
+            return new BadRequestObjectResult("Only confirmed reservations can be extended.");
 
-        // 4. Hourly bookings cannot be extended by date
-        if (res.IsHourly)
-            return new BadRequestObjectResult(
-                "Hourly reservations cannot be extended. Please make a new booking.");
-
-        // 5. One-time rule
         if (res.IsExtended)
             return new BadRequestObjectResult(
                 "This reservation has already been extended once. No further extensions are allowed.");
 
-        // 6. Parse and validate new date
-        if (!DateTime.TryParse(request.NewDropoffDate, out var newDropDate))
-            return new BadRequestObjectResult("Invalid date format. Use yyyy-MM-dd.");
-
-        newDropDate = newDropDate.Date; // strip time component
-
-        if (newDropDate <= res.DropDate.Date)
-            return new BadRequestObjectResult(
-                $"New drop-off date must be after the current drop-off date ({res.DropDate:yyyy-MM-dd}).");
-
-        // 7. Check no overlapping confirmed booking on the same car in the extended window
-        var hasConflict = await _context.Reservations.AnyAsync(r =>
-            r.CarId == res.CarId &&
-            r.ReservationId != reservationId &&
-            r.ReservationStatusId == 1 &&
-            r.PickupDate < newDropDate &&
-            r.DropDate > res.DropDate);
-
-        if (hasConflict)
-            return new BadRequestObjectResult(
-                "The car is already booked by another customer during the extended period. Please choose an earlier date.");
-
-        // 8. Calculate extra charge
-        var extraDays = (decimal)(newDropDate - res.DropDate.Date).TotalDays;
         var pricePerDay = res.Car?.PricePerDay ?? 50m;
-        var extraCharge = Math.Round(pricePerDay * extraDays, 2);
-
         var oldDropDate = res.DropDate;
         var oldTotalAmount = res.TotalAmount ?? 0m;
 
-        // 9. Update reservation
+        DateTime newDropDate;
+        decimal extraCharge;
+        string durationDescription;
+
+        // ── HOURLY path ───────────────────────────────────────────────────────
+        if (res.IsHourly)
+        {
+            int additionalHours = request.AdditionalHours ?? 0;
+            if (additionalHours <= 0)
+                return new BadRequestObjectResult("Additional hours must be at least 1.");
+
+            if (additionalHours > 24)
+                return new BadRequestObjectResult("Cannot extend by more than 24 hours at a time.");
+
+            // Total duration after extension
+            var currentDuration = (res.DropDate - res.PickupDate).TotalHours;
+            if (currentDuration + additionalHours > 24)
+                return new BadRequestObjectResult(
+                    $"Total rental duration cannot exceed 24 hours. " +
+                    $"Current duration: {(int)currentDuration}h. Max additional: {24 - (int)currentDuration}h.");
+
+            newDropDate = res.DropDate.AddHours(additionalHours);
+
+            // Conflict check
+            var hasConflict = await _context.Reservations.AnyAsync(r =>
+                r.CarId == res.CarId &&
+                r.ReservationId != reservationId &&
+                r.ReservationStatusId == 1 &&
+                r.PickupDate < newDropDate &&
+                r.DropDate > res.DropDate);
+
+            if (hasConflict)
+                return new BadRequestObjectResult(
+                    "The car is already booked during the extended period. Please choose fewer hours.");
+
+            var pricePerHour = Math.Ceiling(pricePerDay / 10m);
+            extraCharge = Math.Round(pricePerHour * additionalHours, 2);
+            durationDescription = $"{additionalHours} hour{(additionalHours == 1 ? "" : "s")}";
+
+            // Update DurationHours to reflect new total
+            res.DurationHours = (int)(newDropDate - res.PickupDate).TotalHours;
+        }
+        // ── DAILY path ────────────────────────────────────────────────────────
+        else
+        {
+            if (string.IsNullOrWhiteSpace(request.NewDropoffDate))
+                return new BadRequestObjectResult("NewDropoffDate is required for daily bookings.");
+
+            if (!DateTime.TryParse(request.NewDropoffDate, out newDropDate))
+                return new BadRequestObjectResult("Invalid date format. Use yyyy-MM-dd.");
+
+            newDropDate = newDropDate.Date;
+
+            if (newDropDate <= res.DropDate.Date)
+                return new BadRequestObjectResult(
+                    $"New drop-off date must be after the current drop-off date ({res.DropDate:yyyy-MM-dd}).");
+
+            var hasConflict = await _context.Reservations.AnyAsync(r =>
+                r.CarId == res.CarId &&
+                r.ReservationId != reservationId &&
+                r.ReservationStatusId == 1 &&
+                r.PickupDate < newDropDate &&
+                r.DropDate > res.DropDate);
+
+            if (hasConflict)
+                return new BadRequestObjectResult(
+                    "The car is already booked by another customer during the extended period. Please choose an earlier date.");
+
+            var extraDays = (decimal)(newDropDate - res.DropDate.Date).TotalDays;
+            extraCharge = Math.Round(pricePerDay * extraDays, 2);
+            durationDescription = $"{(int)extraDays} day{((int)extraDays == 1 ? "" : "s")}";
+        }
+
         res.DropDate = newDropDate;
         res.TotalAmount = oldTotalAmount + extraCharge;
         res.IsExtended = true;
         res.UpdatedAt = DateTime.UtcNow;
 
-        // 10. Record a new payment for the extra charge
         var payMethod = await _context.Payments
             .Where(p => p.ReservationId == reservationId)
             .Select(p => p.PaymentMethodId)
@@ -195,8 +232,8 @@ public class ReservationService : IReservationService
         _context.Payments.Add(new Payment
         {
             ReservationId = reservationId,
-            PaymentMethodId = payMethod == 0 ? 1 : payMethod, // fallback to Credit Card
-            PaymentStatusId = 1, // Paid
+            PaymentMethodId = payMethod == 0 ? 1 : payMethod,
+            PaymentStatusId = 1,
             TransactionId = $"TXN_EXTEND_{reservationId}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
             Amount = extraCharge,
             PaymentDate = DateTime.UtcNow
@@ -207,11 +244,11 @@ public class ReservationService : IReservationService
         return new ExtendReservationDto
         {
             ReservationId = reservationId,
-            OldDropoffDate = oldDropDate.ToString("yyyy-MM-dd"),
-            NewDropoffDate = newDropDate.ToString("yyyy-MM-dd"),
+            OldDropoffDate = oldDropDate.ToString(res.IsHourly ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"),
+            NewDropoffDate = newDropDate.ToString(res.IsHourly ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"),
             ExtraCharge = extraCharge,
             NewTotalAmount = res.TotalAmount ?? 0m,
-            Message = $"Reservation extended by {(int)extraDays} day{((int)extraDays == 1 ? "" : "s")}. Extra charge of ${extraCharge} has been processed."
+            Message = $"Reservation extended by {durationDescription}. Extra charge of ${extraCharge} has been processed."
         };
     }
 

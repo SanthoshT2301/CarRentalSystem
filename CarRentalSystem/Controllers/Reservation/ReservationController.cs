@@ -56,13 +56,10 @@ public class ReservationController : ControllerBase
     [HttpPut("{id}/extend")]
     [Authorize(Roles = "Customer")]
     public async Task<ActionResult<ExtendReservationDto>> ExtendReservation(
-        int id,
-        [FromQuery] int userId,
-        [FromBody] ExtendReservationRequest request)
+     int id,
+     [FromQuery] int userId,
+     [FromBody] ExtendReservationRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.NewDropoffDate))
-            return BadRequest(new { message = "NewDropoffDate is required." });
-
         var result = await _reservationService.ExtendReservationAsync(id, userId, request);
 
         if (result.Result is NotFoundObjectResult notFound) return notFound;
@@ -70,7 +67,6 @@ public class ReservationController : ControllerBase
 
         return Ok(result.Value);
     }
-
 
     [HttpDelete("{id}/cancel")]
     [Authorize(Roles = "Customer,Admin")]

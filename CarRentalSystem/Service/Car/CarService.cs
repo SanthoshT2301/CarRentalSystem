@@ -115,6 +115,7 @@ public class CarService : ICarService
             Model = request.Model.Trim(),
             CarYear = request.Year > 0 ? request.Year : 2023,
             PricePerDay = request.PricePerDay > 0 ? request.PricePerDay : 50.00m,
+            PricePerHour = request.PricePerHour > 0 ? request.PricePerHour : 5.00m,
             Transmission = request.Transmission.Trim(),
             Mileage = request.Mileage,
             Color = request.Color.Trim(),
@@ -162,5 +163,39 @@ public class CarService : ICarService
         if (features.Any(f => f.ToLower().Contains("diesel"))) return "Diesel";
         if (features.Any(f => f.ToLower().Contains("petrol"))) return "Petrol";
         return "Gasoline";
+    }
+    public async Task<ActionResult<CarDto>> UpdateCarAsync(int id, UpdateCarRequest request)
+    {
+        var car = await _context.Cars
+            .Include(c => c.Brand).Include(c => c.Category).Include(c => c.FuelType)
+            .Include(c => c.CarStatus).Include(c => c.Location).Include(c => c.CarImages)
+            .FirstOrDefaultAsync(c => c.CarId == id);
+
+        if (car == null) return new NotFoundObjectResult($"Car with id {id} not found.");
+
+        if (!string.IsNullOrWhiteSpace(request.Model))
+            car.Model = request.Model.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Make))
+        {
+            var brand = await _context.CarBrands
+                .FirstOrDefaultAsync(b => b.BrandName.ToLower() == request.Make.ToLower())
+                ?? await CreateAndSaveAsync(_context.CarBrands, new CarBrand { BrandName = request.Make.Trim(), IsActive = true });
+            car.BrandId = brand.BrandId;
+        }
+
+        if (request.PricePerDay.HasValue && request.PricePerDay.Value > 0)
+            car.PricePerDay = request.PricePerDay.Value;
+
+        if (request.PricePerHour.HasValue && request.PricePerHour.Value > 0)
+            car.PricePerHour = request.PricePerHour.Value;
+
+        await _context.SaveChangesAsync();
+
+        var reloaded = await _context.Cars
+            .Include(c => c.Brand).Include(c => c.Category).Include(c => c.FuelType)
+            .Include(c => c.CarStatus).Include(c => c.Location).Include(c => c.CarImages)
+            .FirstAsync(c => c.CarId == id);
+        return _mapper.Map<CarDto>(reloaded);
     }
 }

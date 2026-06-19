@@ -87,4 +87,24 @@ public class AdminService : IAdminService
             return (true, $"Account for {user.Email} has been rejected and deactivated.");
         }
     }
+    public async Task<bool> SetUserActiveStatusAsync(int userId, bool isActive)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return false;
+
+        user.IsActive = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteUserAsync(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return false;
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

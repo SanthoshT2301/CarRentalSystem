@@ -8,6 +8,7 @@
         public string Type { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
         public decimal PricePerDay { get; set; }
+        public decimal PricePerHour { get; set; }
         public string Address { get; set; } = string.Empty;
         public string Image { get; set; } = string.Empty;
         public int NoSeats { get; set; }

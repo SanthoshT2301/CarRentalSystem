@@ -33,6 +33,8 @@ namespace CarRentalSystem.Models
         [StringLength(50)]
         public string? Mileage { get; set; }
         public decimal? PricePerDay { get; set; }
+       
+        public decimal? PricePerHour { get; set; }
 
         [StringLength(255)]
         public string? Address { get; set; }

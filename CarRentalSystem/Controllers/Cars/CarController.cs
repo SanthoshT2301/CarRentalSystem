@@ -34,6 +34,14 @@ public class CarController : ControllerBase
         return car.Value is not null ? Ok(car.Value) : NotFound(new { error = $"Car {id} not found." });
     }
 
+    [HttpPatch("{id}")]
+    [Authorize(Roles = "Agent,Admin")]
+    public async Task<ActionResult<CarDto>> UpdateCar(int id, [FromBody] UpdateCarRequest request)
+    {
+        var result = await _carService.UpdateCarAsync(id, request);
+        if (result.Result is NotFoundObjectResult notFound) return notFound;
+        return Ok(result.Value);
+    }
     /// <summary>
     /// Agent/Admin — add a new car to the fleet.
     /// When called by an Agent, the car is tagged with their userId so they

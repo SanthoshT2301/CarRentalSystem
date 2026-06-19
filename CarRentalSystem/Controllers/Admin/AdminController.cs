@@ -114,4 +114,22 @@ public class AdminController : ControllerBase
         var csv = await _reportService.ExportPerformanceReportCsvAsync(filter);
         return File(csv, "text/csv", $"performance-report-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
+
+    [HttpPatch("users/{id}/status")]
+    public async Task<IActionResult> SetUserActiveStatus(int id, [FromQuery] bool isActive)
+    {
+        var success = await _adminService.SetUserActiveStatusAsync(id, isActive);
+        return success
+            ? Ok(new { message = $"User {(isActive ? "activated" : "deactivated")} successfully." })
+            : NotFound(new { error = $"User {id} not found." });
+    }
+
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var success = await _adminService.DeleteUserAsync(id);
+        return success
+            ? Ok(new { message = "User deleted successfully." })
+            : NotFound(new { error = $"User {id} not found." });
+    }
 }

@@ -16,4 +16,5 @@ public interface ICarService
 
     /// <summary>Returns only cars added by the given agent.</summary>
     Task<PagedResult<CarDto>> GetCarsByAgentAsync(int agentId, int page, int pageSize);
+    Task<ActionResult<CarDto>> UpdateCarAsync(int id, UpdateCarRequest request);
 }

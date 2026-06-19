@@ -91,7 +91,7 @@ namespace CarRentalSystem.DATA
             modelBuilder.Entity<CheckinDetails>().Property(cid => cid.CheckinDetailsId).UseIdentityColumn();
             modelBuilder.Entity<PasswordResetToken>().HasKey(p => p.Id);
             modelBuilder.Entity<PasswordResetToken>().Property(p => p.Id).UseIdentityColumn();
-
+            modelBuilder.Entity<Car>().Property(c => c.PricePerHour).HasPrecision(18, 2);
             modelBuilder.Entity<Car>()
                 .Property(c => c.PricePerDay)
                 .HasPrecision(18, 2);

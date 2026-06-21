@@ -58,6 +58,13 @@ public class AdminController : ControllerBase
         return Ok(new { message });
     }
 
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await _adminService.GetAllUsersAsync();
+        return Ok(new { count = users.Count, data = users });
+    }
+
     // ── Reports ───────────────────────────────────────────────────────────────
     [HttpGet("reports/bookings")]
     public async Task<IActionResult> GetBookingReport([FromQuery] ReportFilterRequest filter)

@@ -114,8 +114,8 @@ public class CarService : ICarService
             AgentId = agentId,                 // ← record who added it
             Model = request.Model.Trim(),
             CarYear = request.Year > 0 ? request.Year : 2023,
-            PricePerDay = request.PricePerDay > 0 ? request.PricePerDay : 50.00m,
-            PricePerHour = request.PricePerHour > 0 ? request.PricePerHour : 5.00m,
+            PricePerDay = request.PricePerDay > 0 ? request.PricePerDay : 1500.00m,
+            PricePerHour = request.PricePerHour > 0 ? request.PricePerHour : 60.00m,
             Transmission = request.Transmission.Trim(),
             Mileage = request.Mileage,
             Color = request.Color.Trim(),

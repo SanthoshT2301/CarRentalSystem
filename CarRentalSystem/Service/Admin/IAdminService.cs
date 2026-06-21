@@ -1,4 +1,5 @@
 using CarRentalSystem.DTO.Admin;
+using CarRentalSystem.DTO.User;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarRentalSystem.Service.Admin;
@@ -9,7 +10,7 @@ public interface IAdminService
 
     /// <summary>Returns all Admin/Agent accounts waiting for approval.</summary>
     Task<List<PendingUserDto>> GetPendingUsersAsync();
-
+    Task<List<UserDto>> GetAllUsersAsync();
     Task<(bool success, string message)> ReviewUserApprovalAsync(int userId, bool approve);
     Task<bool> SetUserActiveStatusAsync(int userId, bool isActive);
     Task<bool> DeleteUserAsync(int userId);

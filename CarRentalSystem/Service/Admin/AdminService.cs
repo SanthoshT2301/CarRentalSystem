@@ -1,5 +1,6 @@
 using CarRentalSystem.DATA;
 using CarRentalSystem.DTO.Admin;
+using CarRentalSystem.DTO.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -106,5 +107,23 @@ public class AdminService : IAdminService
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
         return true;
+    }
+    // ── All users (for User Management tab) ──────────────────────────────────
+    public async Task<List<UserDto>> GetAllUsersAsync()
+    {
+        return await _context.Users
+            .Include(u => u.Role)
+            .OrderBy(u => u.UserId)
+            .Select(u => new UserDto
+            {
+                UserId = u.UserId,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                Email = u.Email,
+                Phone = u.Phone,
+                Role = u.Role != null ? u.Role.RoleName : "Unknown",
+                IsActive = u.IsActive ?? true
+            })
+            .ToListAsync();
     }
 }

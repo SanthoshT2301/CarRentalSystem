@@ -64,10 +64,10 @@ public class ReservationService : IReservationService
                 "This vehicle is already booked for the requested period.");
 
         decimal totalAmount = request.IsHourly
-            ? Math.Ceiling((car.PricePerDay ?? 50m) / 10) *
-              (request.DurationHours > 0 ? request.DurationHours : 1)
-            : (car.PricePerDay ?? 50m) *
-              Math.Max(1, (decimal)(dDate - pDate).TotalDays);
+      ? Math.Ceiling((car.PricePerDay ?? 1500m) / 24) *
+           (request.DurationHours > 0 ? request.DurationHours : 1)
+      : (car.PricePerDay ?? 1500m) *
+           Math.Max(1, (decimal)(dDate - pDate).TotalDays);
 
         var reservation = new Models.Reservation
         {
@@ -142,7 +142,7 @@ public class ReservationService : IReservationService
             return new BadRequestObjectResult(
                 "This reservation has already been extended once. No further extensions are allowed.");
 
-        var pricePerDay = res.Car?.PricePerDay ?? 50m;
+        var pricePerDay = res.Car?.PricePerDay ?? 1500m;
         var oldDropDate = res.DropDate;
         var oldTotalAmount = res.TotalAmount ?? 0m;
 
@@ -181,7 +181,7 @@ public class ReservationService : IReservationService
                 return new BadRequestObjectResult(
                     "The car is already booked during the extended period. Please choose fewer hours.");
 
-            var pricePerHour = Math.Ceiling(pricePerDay / 10m);
+            var pricePerHour = Math.Ceiling(pricePerDay / 24m);
             extraCharge = Math.Round(pricePerHour * additionalHours, 2);
             durationDescription = $"{additionalHours} hour{(additionalHours == 1 ? "" : "s")}";
 

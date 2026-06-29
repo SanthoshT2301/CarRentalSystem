@@ -14,4 +14,6 @@ public interface IAdminService
     Task<(bool success, string message)> ReviewUserApprovalAsync(int userId, bool approve);
     Task<bool> SetUserActiveStatusAsync(int userId, bool isActive);
     Task<bool> DeleteUserAsync(int userId);
+    Task<(bool success, string message, UserDto? user)> CreateUserAsync(AdminCreateUserRequest request);
+    Task<(bool success, string message, UserDto? user)> UpdateUserAsync(int userId, AdminUpdateUserRequest request);
 }

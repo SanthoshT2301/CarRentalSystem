@@ -18,13 +18,18 @@ public class CarController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<PagedResult<CarDto>>> GetAllCars(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+      [FromQuery] int page = 1,
+      [FromQuery] int pageSize = 10,
+      [FromQuery] string? location = null,
+      [FromQuery] string? type = null,
+      [FromQuery] string? pickupDate = null,
+      [FromQuery] string? dropoffDate = null)
     {
-        var result = await _carService.GetAllCars(page, pageSize);
+        DateTime? pDate = DateTime.TryParse(pickupDate, out var pd) ? pd : null;
+        DateTime? dDate = DateTime.TryParse(dropoffDate, out var dd) ? dd : null;
+        var result = await _carService.GetAllCars(page, pageSize, location, type, pDate, dDate);
         return Ok(result);
     }
-
     /// <summary>Public — get a single car by ID.</summary>
     [HttpGet("{id}")]
     [AllowAnonymous]
@@ -83,5 +88,15 @@ public class CarController : ControllerBase
         var result = await _carService.DeleteCarAsync(id);
         if (result.Result is NotFoundObjectResult notFound) return notFound;
         return Ok(new { message = "Car deleted successfully." });
+    }
+    [HttpGet("{id}/availability")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CheckAvailability(int id, [FromQuery] string pickupDate, [FromQuery] string dropoffDate)
+    {
+        if (!DateTime.TryParse(pickupDate, out var pDate) || !DateTime.TryParse(dropoffDate, out var dDate))
+            return BadRequest(new { error = "Invalid date format." });
+
+        var available = await _carService.CheckAvailabilityAsync(id, pDate, dDate);
+        return Ok(new { carId = id, available });
     }
 }

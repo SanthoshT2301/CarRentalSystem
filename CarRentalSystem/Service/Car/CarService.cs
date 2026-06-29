@@ -30,21 +30,8 @@ public class CarService : ICarService
             .Include(c => c.Location)
             .Include(c => c.CarImages);
 
-    // ── GET ALL (paginated) ───────────────────────────────────────────────────
-    public async Task<PagedResult<CarDto>> GetAllCars(int page, int pageSize)
-    {
-        var query = CarsWithIncludes().OrderBy(c => c.CarId);
-        var totalCount = await query.CountAsync();
-        var cars = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
-        return new PagedResult<CarDto>
-        {
-            Data = _mapper.Map<List<CarDto>>(cars),
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
-    }
+   
+   
 
     // ── GET BY ID ─────────────────────────────────────────────────────────────
     public async Task<ActionResult<CarDto>> GetCarById(int id)
@@ -197,5 +184,47 @@ public class CarService : ICarService
             .Include(c => c.CarStatus).Include(c => c.Location).Include(c => c.CarImages)
             .FirstAsync(c => c.CarId == id);
         return _mapper.Map<CarDto>(reloaded);
+    }
+    public async Task<bool> CheckAvailabilityAsync(int carId, DateTime pickupDate, DateTime dropoffDate)
+    {
+        var carExists = await _context.Cars.AnyAsync(c => c.CarId == carId);
+        if (!carExists) throw new ArgumentException("Car not found.");
+
+        var hasConflict = await _context.Reservations.AnyAsync(r =>
+            r.CarId == carId && r.ReservationStatusId == 1 &&
+            pickupDate < r.DropDate && dropoffDate > r.PickupDate);
+
+        return !hasConflict;
+    }
+    public async Task<PagedResult<CarDto>> GetAllCars(int page, int pageSize, string? location = null, string? type = null, DateTime? pickupDate = null, DateTime? dropoffDate = null)
+    {
+        var query = CarsWithIncludes().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(location))
+            query = query.Where(c => c.Location != null && c.Location.LocationName.ToLower() == location.ToLower());
+
+        if (!string.IsNullOrWhiteSpace(type))
+            query = query.Where(c => c.Category != null && c.Category.CategoryName.ToLower() == type.ToLower());
+
+        if (pickupDate.HasValue && dropoffDate.HasValue)
+        {
+            var busyCarIds = await _context.Reservations
+                .Where(r => r.ReservationStatusId == 1 && pickupDate.Value < r.DropDate && dropoffDate.Value > r.PickupDate)
+                .Select(r => r.CarId)
+                .ToListAsync();
+            query = query.Where(c => !busyCarIds.Contains(c.CarId));
+        }
+
+        query = query.OrderBy(c => c.CarId);
+        var totalCount = await query.CountAsync();
+        var cars = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<CarDto>
+        {
+            Data = _mapper.Map<List<CarDto>>(cars),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 }

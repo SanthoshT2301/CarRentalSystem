@@ -3,7 +3,7 @@ using CarRentalSystem.DTO.Admin;
 using CarRentalSystem.DTO.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using CarRentalSystem.Models;
 namespace CarRentalSystem.Service.Admin;
 
 public class AdminService : IAdminService
@@ -125,5 +125,87 @@ public class AdminService : IAdminService
                 IsActive = u.IsActive ?? true
             })
             .ToListAsync();
+    }
+    public async Task<(bool success, string message, UserDto? user)> CreateUserAsync(AdminCreateUserRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return (false, "Email and password are required.", null);
+
+        var emailLower = request.Email.ToLowerInvariant();
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower))
+            return (false, "A user with this email already exists.", null);
+
+        if (!await _context.Roles.AnyAsync(r => r.RoleId == request.RoleId))
+            return (false, "Invalid role specified.", null);
+
+        var user = new User
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email,
+            Phone = request.Phone,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            RoleId = request.RoleId,
+            IsActive = true,
+            IsApproved = true, // admin-created accounts skip the approval queue
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        var role = await _context.Roles.FindAsync(user.RoleId);
+        return (true, "User created successfully.", new UserDto
+        {
+            UserId = user.UserId,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Phone = user.Phone,
+            Role = role?.RoleName ?? "Customer",
+            IsActive = user.IsActive ?? true
+        });
+    }
+
+    public async Task<(bool success, string message, UserDto? user)> UpdateUserAsync(int userId, AdminUpdateUserRequest request)
+    {
+        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
+        if (user == null) return (false, "User not found.", null);
+
+        if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName.Trim();
+        if (request.LastName != null) user.LastName = request.LastName.Trim();
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var emailLower = request.Email.ToLowerInvariant();
+            if (await _context.Users.AnyAsync(u => u.UserId != userId && u.Email.ToLower() == emailLower))
+                return (false, "Another user already uses this email.", null);
+            user.Email = request.Email.Trim();
+        }
+
+        if (request.Phone != null) user.Phone = request.Phone.Trim();
+
+        if (request.RoleId.HasValue)
+        {
+            if (!await _context.Roles.AnyAsync(r => r.RoleId == request.RoleId.Value))
+                return (false, "Invalid role specified.", null);
+            user.RoleId = request.RoleId.Value;
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var role = await _context.Roles.FindAsync(user.RoleId);
+        return (true, "User updated successfully.", new UserDto
+        {
+            UserId = user.UserId,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Phone = user.Phone,
+            Role = role?.RoleName ?? "Customer",
+            IsActive = user.IsActive ?? true
+        });
     }
 }

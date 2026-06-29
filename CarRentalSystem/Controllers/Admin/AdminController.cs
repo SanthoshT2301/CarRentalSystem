@@ -139,4 +139,17 @@ public class AdminController : ControllerBase
             ? Ok(new { message = "User deleted successfully." })
             : NotFound(new { error = $"User {id} not found." });
     }
+    [HttpPost("users")]
+    public async Task<IActionResult> CreateUser([FromBody] AdminCreateUserRequest request)
+    {
+        var (success, message, user) = await _adminService.CreateUserAsync(request);
+        return success ? Ok(new { message, user }) : BadRequest(new { error = message });
+    }
+
+    [HttpPatch("users/{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] AdminUpdateUserRequest request)
+    {
+        var (success, message, user) = await _adminService.UpdateUserAsync(id, request);
+        return success ? Ok(new { message, user }) : BadRequest(new { error = message });
+    }
 }

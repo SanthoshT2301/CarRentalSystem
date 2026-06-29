@@ -25,7 +25,18 @@ public class ReviewController : ControllerBase
         return Ok(result);
     }
 
-   
+
+    [HttpGet("agent/{agentId}")]
+    [Authorize(Roles = "Agent,Admin")]
+    public async Task<ActionResult<PagedResult<ReviewDto>>> GetAgentCarReviews(
+    int agentId,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10)
+    {
+        var result = await _reviewService.GetAgentCarReviewsAsync(agentId, page, pageSize);
+        return Ok(result);
+    }
+
     [HttpGet("car/{carId}")]
     [AllowAnonymous]
     public async Task<ActionResult<PagedResult<ReviewDto>>> GetCarReviews(

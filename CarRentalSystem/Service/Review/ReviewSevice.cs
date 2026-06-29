@@ -47,6 +47,27 @@ public class ReviewService : IReviewService
         return _mapper.Map<ReviewDto>(loaded);
     }
 
+
+    public async Task<PagedResult<ReviewDto>> GetAgentCarReviewsAsync(int agentId, int page, int pageSize)
+    {
+        var query = _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Reservation).ThenInclude(res => res!.Car).ThenInclude(c => c!.Brand)
+            .Where(r => r.Reservation != null && r.Reservation.Car != null && r.Reservation.Car.AgentId == agentId)
+            .OrderByDescending(r => r.CreatedAt);
+
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<ReviewDto>
+        {
+            Data = _mapper.Map<List<ReviewDto>>(items),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
     // paginated
     public async Task<PagedResult<ReviewDto>> GetCarReviewsAsync(int carId, int page, int pageSize)
     {

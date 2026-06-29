@@ -34,6 +34,7 @@ builder.Services.AddScoped<IGateLogisticsService, GateLogisticsService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IReviewDisputeServicecs, ReviewDisputeService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secret = jwtSettings.GetValue<string>("Secret")

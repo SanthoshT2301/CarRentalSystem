@@ -11,4 +11,5 @@ public interface IReviewService
     Task<PagedResult<ReviewDto>> GetAllReviewsAsync(int page, int pageSize);
     Task<ActionResult<double>> GetAverageRatingForCarAsync(int carId);
     Task<ActionResult<int>> GetReviewCountForCarAsync(int carId);
+    Task<PagedResult<ReviewDto>> GetAgentCarReviewsAsync(int agentId, int page, int pageSize);
 }

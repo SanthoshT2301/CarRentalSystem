@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CarRentalSystem.Controllers.Review
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/disputes")]
     [Authorize(Roles = "Admin")] 
     public class DisputesController : ControllerBase
     {
